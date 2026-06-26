@@ -1,0 +1,17 @@
+# Déploiement du Worker via la CLI Wrangler (optionnel — sinon, utilise le dashboard).
+#
+#   1. npm install -g wrangler
+#   2. wrangler login
+#   3. Crée le namespace KV et copie l'id renvoyé dans [[kv_namespaces]] ci-dessous :
+#        wrangler kv namespace create WF_CACHE
+#   4. wrangler deploy
+#
+# Le binding "WF_CACHE" doit correspondre à env.WF_CACHE utilisé dans cloudflare-worker.js
+
+name = "warframe-tracker-proxy"
+main = "cloudflare-worker.js"
+compatibility_date = "2024-11-01"
+
+[[kv_namespaces]]
+binding = "WF_CACHE"
+id = "REMPLACE_PAR_L_ID_DU_NAMESPACE_KV"

@@ -1,0 +1,14 @@
+# Ignore everything by default
+*
+
+# Allow the Warframe Tracker files and folders
+!index.html
+!items.js
+!items.json
+!server.js
+!cloudflare-worker.js
+!wrangler.toml
+!vercel.json
+!.gitignore
+!api/
+!api/**

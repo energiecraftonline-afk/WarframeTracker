@@ -1751,7 +1751,7 @@ const CDN="https://warframe.market/static/assets/";
 // --- CONFIGURATION HÉBERGEMENT EN LIGNE (CLOUDFLARE) ---
 // Remplacez par l'URL de votre Cloudflare Worker une fois déployé
 // Exemple : "https://mon-proxy.mon-pseudo.workers.dev"
-const CLOUDFLARE_WORKER_URL = ""; 
+const CLOUDFLARE_WORKER_URL = "https://noisy-wildflower-5226.energiecraft-online.workers.dev";
 
 const PROXIES=[
   u=>u,                                                   // direct
@@ -2056,7 +2056,7 @@ async function fetchJSON(url, nocache = false){
   }
   // 1. Si un worker Cloudflare dédié est configuré
   if(typeof CLOUDFLARE_WORKER_URL !== "undefined" && CLOUDFLARE_WORKER_URL){
-    const r = await fetch(`${CLOUDFLARE_WORKER_URL}?url=${encodeURIComponent(url)}`);
+    const r = await fetch(`${CLOUDFLARE_WORKER_URL}?url=${encodeURIComponent(url)}${nocache ? '&nocache=1' : ''}`);
     if(!r.ok) throw new Error("HTTP " + r.status);
     return await r.json();
   }
