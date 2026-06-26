@@ -7,6 +7,7 @@
 !items.json
 !server.js
 !cloudflare-worker.js
+!sw.js
 !wrangler.toml
 !vercel.json
 !.gitignore

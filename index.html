@@ -3788,5 +3788,16 @@ function selectChatPartner(partner, forceRefresh = false) {
   }
 })();
 </script>
+<script>
+// Service Worker : cache hors-ligne + chargement instantané (voir sw.js).
+// Uniquement sur http/https (pas en file://), pour ne pas casser l'usage local.
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch((e) => {
+      console.warn("Service Worker non enregistré :", e);
+    });
+  });
+}
+</script>
 </body>
 </html>
