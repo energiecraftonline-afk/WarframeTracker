@@ -56,6 +56,35 @@ export default {
     }
 
     const url = new URL(request.url);
+    const hasKV = env && env.WF_CACHE;
+
+    // --- ANNUAIRE : où est l'API du PC (tunnel) en ce moment ---
+    // GET  /register            -> renvoie l'URL actuelle du PC (ou null)
+    // PUT  /register?token=&url= -> le PC publie son URL de tunnel (auth par token)
+    if (url.pathname === '/register') {
+      if (request.method === 'GET') {
+        const v = hasKV ? await env.WF_CACHE.get('__pc_api_url__') : null;
+        return json({ url: v || null }, 200);
+      }
+      if (request.method === 'PUT' || request.method === 'POST') {
+        const token = url.searchParams.get('token');
+        if (!env.REGISTER_TOKEN || token !== env.REGISTER_TOKEN) {
+          return json({ error: 'unauthorized' }, 401);
+        }
+        const pcUrl = url.searchParams.get('url');
+        if (!pcUrl || !/^https:\/\/[^ ]+$/.test(pcUrl)) {
+          return json({ error: 'url invalide' }, 400);
+        }
+        if (hasKV) {
+          // Expire au bout de 6 h : si le PC arrête de se ré-enregistrer,
+          // l'entrée disparaît et le site retombe sur le cache KV.
+          await env.WF_CACHE.put('__pc_api_url__', pcUrl, { expirationTtl: 6 * 60 * 60 });
+        }
+        return json({ ok: true, url: pcUrl }, 200);
+      }
+      return json({ error: 'méthode non supportée' }, 405);
+    }
+
     const targetUrl = url.searchParams.get('url');
     const bypass = url.searchParams.get('nocache') === '1';
 
@@ -69,7 +98,6 @@ export default {
     }
 
     const ttl = getTTL(targetUrl);
-    const hasKV = env && env.WF_CACHE;
 
     // 1. Lecture du cache partagé KV (sauf contournement)
     if (hasKV && !bypass) {

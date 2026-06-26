@@ -1753,6 +1753,22 @@ const CDN="https://warframe.market/static/assets/";
 // Exemple : "https://mon-proxy.mon-pseudo.workers.dev"
 const CLOUDFLARE_WORKER_URL = "https://noisy-wildflower-5226.energiecraft-online.workers.dev";
 
+// URL de l'API du PC (cache MariaDB), découverte dynamiquement via l'annuaire
+// du worker. Si le PC est en ligne, on l'utilise en priorité ; sinon on
+// retombe automatiquement sur le cache KV du worker.
+let PC_PROXY_BASE = null;
+let PC_PROXY_TRIED = false;
+async function discoverPcApi(){
+  if(PC_PROXY_TRIED) return PC_PROXY_BASE;
+  PC_PROXY_TRIED = true;
+  if(!CLOUDFLARE_WORKER_URL) return null;
+  try{
+    const r = await fetch(`${CLOUDFLARE_WORKER_URL}/register`, { cache: "no-store" });
+    if(r.ok){ const j = await r.json(); if(j && j.url) PC_PROXY_BASE = j.url; }
+  }catch(e){ /* annuaire injoignable : on ignore */ }
+  return PC_PROXY_BASE;
+}
+
 const PROXIES=[
   u=>u,                                                   // direct
   u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u),
@@ -2054,11 +2070,20 @@ async function fetchJSON(url, nocache = false){
     if(!r.ok) throw new Error("HTTP " + r.status);
     return await r.json();
   }
-  // 1. Si un worker Cloudflare dédié est configuré
+  // 1a. PC (cache MariaDB) en priorité, s'il est en ligne (découvert via l'annuaire du worker)
+  const pcBase = await discoverPcApi();
+  if(pcBase){
+    try {
+      const r = await fetch(`${pcBase}?url=${encodeURIComponent(url)}${nocache ? '&nocache=1' : ''}`);
+      if(r.ok) return await r.json();
+    } catch(e){ PC_PROXY_BASE = null; /* PC injoignable : on retombe sur le worker */ }
+  }
+  // 1b. Worker Cloudflare (cache KV partagé) en repli
   if(typeof CLOUDFLARE_WORKER_URL !== "undefined" && CLOUDFLARE_WORKER_URL){
-    const r = await fetch(`${CLOUDFLARE_WORKER_URL}?url=${encodeURIComponent(url)}${nocache ? '&nocache=1' : ''}`);
-    if(!r.ok) throw new Error("HTTP " + r.status);
-    return await r.json();
+    try {
+      const r = await fetch(`${CLOUDFLARE_WORKER_URL}?url=${encodeURIComponent(url)}${nocache ? '&nocache=1' : ''}`);
+      if(r.ok) return await r.json();
+    } catch(e){ /* repli sur proxy local / pool de proxies publics */ }
   }
   // 2. Si on est sur un serveur web (HTTP/HTTPS), on essaie d'utiliser notre proxy local/Vercel (/proxy)
   if(location.protocol.startsWith("http")){
