@@ -896,6 +896,8 @@ function buildView(){
     if(cat && !d.tags.includes(cat)) return false;
     if(vf==="hide" && d.vaulted===true) return false;
     if(vf==="only" && d.vaulted!==true) return false;
+    // masquer les items dont le prix dépasse la vente 48h (sur-cotés)
+    if(d.plat!=null && d.smax!=null && d.plat>d.smax) return false;
     // filtre « farmable hors achat PL » : appliqué seulement quand les sources sont chargées
     // (sinon on masquerait tout). Reliques (missions) et sets (craft) exemptés.
     if(sourceMap){
