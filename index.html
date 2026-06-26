@@ -53,7 +53,7 @@
   header{
     padding:14px 24px; display:flex; flex-wrap:wrap; align-items:center; gap:12px;
     background:linear-gradient(180deg,rgba(11,20,32,.92),rgba(9,16,26,.78));
-    position:sticky; top:0; z-index:10; backdrop-filter:blur(8px);
+    position:sticky; top:0; z-index:200; backdrop-filter:blur(8px);
     box-shadow:0 1px 0 rgba(84,216,255,.12), 0 10px 30px -12px rgba(0,0,0,.7);
     border-bottom:1px solid transparent;
     border-image:linear-gradient(90deg,transparent,var(--accent2) 25%,var(--accent) 50%,var(--accent2) 75%,transparent) 1;
@@ -96,24 +96,61 @@
   .bar{height:3px; background:rgba(29,51,70,.5); position:relative; overflow:hidden}
   .bar>i{position:absolute; left:0; top:0; height:100%; width:0; background:linear-gradient(90deg,var(--accent2),var(--accent),#bdf0ff); box-shadow:0 0 14px rgba(84,216,255,.7); transition:width .3s ease}
   main{padding:8px 24px 60px}
-  table{width:100%; border-collapse:separate; border-spacing:0; font-size:14px}
-  th,td{padding:9px 12px; text-align:left; border-bottom:1px solid rgba(29,51,70,.55)}
+  table{width:100%; border-collapse:separate; border-spacing:0 6px; font-size:14px; margin-top:0}
+  th,td{padding:9px 12px; text-align:left}
   th{
-    position:sticky; top:62px; background:linear-gradient(180deg,#102234,#0a1422); color:var(--accent);
+    position:sticky; top:var(--head-h,62px); background:linear-gradient(180deg,#102234,#0a1422); color:var(--accent);
     font-family:"Orbitron",sans-serif; font-weight:500; font-size:11px; text-transform:uppercase; letter-spacing:1px;
-    cursor:pointer; user-select:none; white-space:nowrap; z-index:5;
+    cursor:pointer; user-select:none; white-space:nowrap; z-index:100;
     border-bottom:2px solid var(--accent2);
-    box-shadow:0 6px 16px -8px rgba(0,0,0,.6);
+    box-shadow: 0 -60px 0 #102234, 0 6px 16px -8px rgba(0,0,0,.6); /* Bouclier plein vers le haut pour bloquer le débordement des lignes défilantes + ombre standard en bas */
   }
   th:hover{color:#fff;background:linear-gradient(180deg,#15293c,#0c1a28)}
   th:hover .arrow{opacity:1}
   th .arrow{opacity:.7; font-size:10px; transition:.15s}
   tbody tr{position:relative; transition:background .15s, box-shadow .15s;
     content-visibility:auto; contain-intrinsic-size:0 44px}
-  tbody tr:nth-child(even) td{background:rgba(255,255,255,.012)}
-  tr:hover td{background:rgba(84,216,255,.08)}
-  tbody tr:hover{box-shadow:inset 0 0 22px rgba(84,216,255,.05)}
-  tbody tr:hover td:first-child{box-shadow:inset 3px 0 0 var(--accent), inset 0 0 18px rgba(84,216,255,.06)}
+  /* Espace supplémentaire entre l'en-tête sticky et la première ligne */
+  tbody tr:first-child td { padding-top: 12px; }
+  
+  /* Style des lignes de tableau sous forme de cartes séparées */
+  tbody tr td {
+    background: linear-gradient(180deg, rgba(18, 30, 45, 0.55), rgba(11, 19, 30, 0.5));
+    border-top: 1px solid rgba(29, 51, 70, 0.45);
+    border-bottom: 1px solid rgba(29, 51, 70, 0.45);
+    box-shadow: 0 2px 6px -4px rgba(0, 0, 0, 0.55);
+    transition: background 0.18s, border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+  }
+  tbody tr td:first-child {
+    border-left: 1px solid rgba(29, 51, 70, 0.45);
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+  }
+  tbody tr td:last-child {
+    border-right: 1px solid rgba(29, 51, 70, 0.45);
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
+
+  /* Alternance des lignes */
+  tbody tr:nth-child(even) td {
+    background: linear-gradient(180deg, rgba(23, 37, 54, 0.6), rgba(15, 24, 37, 0.55));
+  }
+
+  /* Effet de survol : léger relief + accent cyan à gauche */
+  tr:hover td {
+    background: linear-gradient(180deg, rgba(84, 216, 255, 0.14), rgba(84, 216, 255, 0.07)) !important;
+    border-color: rgba(84, 216, 255, 0.35) !important;
+    box-shadow: 0 6px 18px -8px rgba(0, 0, 0, 0.6), inset 0 0 18px rgba(84, 216, 255, 0.06) !important;
+  }
+  /* accent cyan à gauche sans élargir la bordure (pas de saut horizontal) */
+  tr:hover td:first-child {
+    box-shadow: inset 3px 0 0 var(--accent), 0 6px 18px -8px rgba(0, 0, 0, 0.6) !important;
+  }
+  tr:hover td:last-child {
+    border-right-color: rgba(84, 216, 255, 0.35) !important;
+  }
+
   td.rank{color:var(--muted);font-variant-numeric:tabular-nums;text-align:right;width:46px;font-weight:600}
   td.name{font-weight:600}
   td.name .wrap{display:flex; align-items:center; gap:10px}
@@ -123,21 +160,494 @@
   .plat{color:var(--accent); font-weight:700; font-size:15px; font-variant-numeric:tabular-nums; text-shadow:0 0 8px rgba(70,211,255,.3)}
   .rng{color:var(--muted); font-size:12px}
   .lastsale{color:var(--gold); font-weight:600; font-variant-numeric:tabular-nums}
-  .verdict{display:inline-block;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap;clip-path:var(--cut)}
-  .verdict.save{background:rgba(76,224,164,.14);border:1px solid var(--green);color:var(--green)}
-  .verdict.warn{background:rgba(255,159,67,.16);border:1px solid var(--orange);color:var(--orange)}
-  /* item très rentable : clignotement / pulsation */
-  .verdict.hot{ color:#063; background:linear-gradient(180deg,#7dffc4,#3fd99a); border-color:#7dffc4; font-weight:800;
-    animation:hotPulse 1s ease-in-out infinite; }
-  @keyframes hotPulse{
-    0%,100%{ box-shadow:0 0 4px rgba(76,224,164,.5); transform:scale(1); }
-    50%{ box-shadow:0 0 16px rgba(76,224,164,.95), 0 0 28px rgba(76,224,164,.5); transform:scale(1.06); }
+  .verdict{display:inline-block;padding:3px 8px;font-size:11.5px;font-weight:800;white-space:nowrap;clip-path:var(--cut);text-transform:uppercase;letter-spacing:0.3px}
+  
+  /* Badge Positif (Vert) - Animation Respire */
+  .verdict.save {
+    background: rgba(76, 224, 164, 0.16);
+    border: 1px solid var(--green);
+    color: #7dffc4;
+    text-shadow: 0 0 4px rgba(76, 224, 164, 0.4);
+    animation: breatheGreen 2.5s infinite ease-in-out;
   }
-  /* ligne TRÈS rentable : l'effet RGB/clignotement (fond + contour + lueur) est piloté en JS (styles inline),
-     pour fonctionner même si les animations CSS sont désactivées (reduced-motion, etc.). */
-  tbody tr.hot-row{ z-index:3; contain:none; content-visibility:visible; } /* lueur non clippée + au-dessus des voisines */
-  tbody tr.hot-row td:first-child{ border-top-left-radius:6px; border-bottom-left-radius:6px; }
-  tbody tr.hot-row td:last-child{ border-top-right-radius:6px; border-bottom-right-radius:6px; }
+  @keyframes breatheGreen {
+    0%, 100% {
+      box-shadow: 0 0 3px rgba(76, 224, 164, 0.2);
+      border-color: rgba(76, 224, 164, 0.4);
+      background: rgba(76, 224, 164, 0.1);
+    }
+    50% {
+      box-shadow: 0 0 10px rgba(76, 224, 164, 0.65);
+      border-color: rgba(76, 224, 164, 1);
+      background: rgba(76, 224, 164, 0.22);
+    }
+  }
+
+  /* Badge Négatif (Rouge) - Animation Respire */
+  .verdict.warn {
+    background: rgba(255, 93, 108, 0.16);
+    border: 1px solid var(--red);
+    color: #ff5d6c;
+    text-shadow: 0 0 4px rgba(255, 93, 108, 0.4);
+    animation: breatheRed 2.5s infinite ease-in-out;
+  }
+  @keyframes breatheRed {
+    0%, 100% {
+      box-shadow: 0 0 3px rgba(255, 93, 108, 0.2);
+      border-color: rgba(255, 93, 108, 0.4);
+      background: rgba(255, 93, 108, 0.1);
+    }
+    50% {
+      box-shadow: 0 0 10px rgba(255, 93, 108, 0.65);
+      border-color: rgba(255, 93, 108, 1);
+      background: rgba(255, 93, 108, 0.22);
+    }
+  }
+
+  /* Badge Très Positif (Orange) - Animation Bounce + Particules */
+  .verdict.hot {
+    color: #04101f;
+    background: linear-gradient(135deg, #ffce5a, #ff9f43);
+    border-color: #ffce5a;
+    font-weight: 900;
+    text-shadow: none;
+    position: relative;
+    overflow: visible; /* Permet aux particules de flotter en dehors */
+    animation: hotBounce 1.6s infinite ease-in-out;
+  }
+  
+  @keyframes hotBounce {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 4px rgba(255, 159, 67, 0.4);
+    }
+    50% {
+      transform: scale(1.07);
+      box-shadow: 0 0 14px rgba(255, 159, 67, 0.8), 0 0 22px rgba(255, 159, 67, 0.4);
+    }
+  }
+
+  /* Effet étincelles/particules sur le badge très positif */
+  .verdict.hot::after {
+    content: "";
+    position: absolute;
+    inset: -6px -12px;
+    pointer-events: none;
+    background-image: 
+      radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 206, 90, 0.4) 35%, transparent 70%),
+      radial-gradient(circle, rgba(255, 206, 90, 0.95) 0%, rgba(255, 159, 67, 0.4) 40%, transparent 80%),
+      radial-gradient(circle, rgba(255, 120, 130, 0.9) 0%, rgba(255, 60, 80, 0.3) 30%, transparent 70%);
+    background-size: 14px 14px, 18px 18px, 12px 12px;
+    background-repeat: no-repeat;
+    animation: badgeSparks 1.8s infinite linear;
+    opacity: 0;
+    z-index: 2;
+    filter: drop-shadow(0 0 3px rgba(255, 206, 90, 0.95)) drop-shadow(0 0 6px rgba(255, 159, 67, 0.6));
+  }
+  
+  @keyframes badgeSparks {
+    0% {
+      background-position: 15% 100%, 50% 100%, 80% 100%;
+      transform: translateX(0) scale(0.8);
+      opacity: 0;
+    }
+    20% {
+      opacity: 0.95;
+    }
+    35% {
+      transform: translateX(2px) scale(1.1);
+      opacity: 0.75; /* Scintillement */
+    }
+    70% {
+      transform: translateX(-2px) scale(0.9);
+      opacity: 0.95;
+    }
+    85% {
+      opacity: 0.7; /* Scintillement */
+    }
+    100% {
+      background-position: 5% 0%, 55% -20%, 95% -10%;
+      transform: translateX(0) scale(0.8);
+      opacity: 0;
+    }
+  }
+  /* ligne TRÈS rentable (hot-row) : effet de lueur bleue brillante animée + particules orange */
+  tbody tr.hot-row td {
+    background: transparent !important; /* Rend les cellules transparentes pour laisser briller le dégradé du TR parent */
+    border-top: 1px solid rgba(84, 216, 255, 0.25) !important;
+    border-bottom: 1px solid rgba(84, 216, 255, 0.25) !important;
+    position: static !important; /* Permet aux pseudo-éléments absolus de td:first-child de se positionner par rapport au TR parent */
+  }
+  tbody tr.hot-row td:first-child {
+    border-left: 4px solid var(--accent) !important;
+  }
+  tbody tr.hot-row td:last-child {
+    border-right: 1px solid rgba(84, 216, 255, 0.25) !important;
+  }
+  tbody tr.hot-row {
+    z-index: 3;
+    contain: none;
+    content-visibility: visible;
+    background: linear-gradient(90deg, rgba(84, 216, 255, 0.16) 0%, rgba(84, 216, 255, 0.03) 100%) !important; /* Dégradé lumineux uni sur toute la ligne */
+    animation: hotRowGlow 2.5s infinite ease-in-out;
+  }
+  @keyframes hotRowGlow {
+    0%, 100% {
+      box-shadow: 0 0 8px rgba(84, 216, 255, 0.25);
+    }
+    50% {
+      box-shadow: 0 0 18px rgba(84, 216, 255, 0.55), inset 0 0 10px rgba(84, 216, 255, 0.08);
+    }
+  }
+
+  /* Cas spécifique : ligne TRÈS rentable (hot-row) ET au prix le plus bas (row-lo) */
+  tbody tr.row-lo.hot-row td {
+    background: transparent !important;
+    border-top: 1px solid rgba(255, 93, 108, 0.25) !important;
+    border-bottom: 1px solid rgba(255, 93, 108, 0.25) !important;
+    position: static !important;
+  }
+  tbody tr.row-lo.hot-row td:first-child {
+    border-left: 4px solid var(--red) !important;
+  }
+  tbody tr.row-lo.hot-row td:last-child {
+    border-right: 1px solid rgba(255, 93, 108, 0.25) !important;
+  }
+  tbody tr.row-lo.hot-row {
+    z-index: 3;
+    contain: none;
+    content-visibility: visible;
+    background: linear-gradient(90deg, rgba(255, 93, 108, 0.16) 0%, rgba(255, 93, 108, 0.03) 100%) !important; /* Dégradé lumineux uni sur toute la ligne */
+    animation: hotRowGlowRed 2.5s infinite ease-in-out;
+  }
+  @keyframes hotRowGlowRed {
+    0%, 100% {
+      box-shadow: 0 0 8px rgba(255, 93, 108, 0.25);
+    }
+    50% {
+      box-shadow: 0 0 18px rgba(255, 93, 108, 0.55), inset 0 0 10px rgba(255, 93, 108, 0.08);
+    }
+  }
+
+  /* Cas spécifique : ligne TRÈS rentable (hot-row) ET au prix le plus haut (row-hi) */
+  tbody tr.row-hi.hot-row td {
+    background: transparent !important;
+    border-top: 1px solid rgba(76, 224, 164, 0.25) !important;
+    border-bottom: 1px solid rgba(76, 224, 164, 0.25) !important;
+    position: static !important;
+  }
+  tbody tr.row-hi.hot-row td:first-child {
+    border-left: 4px solid var(--green) !important;
+  }
+  tbody tr.row-hi.hot-row td:last-child {
+    border-right: 1px solid rgba(76, 224, 164, 0.25) !important;
+  }
+  tbody tr.row-hi.hot-row {
+    z-index: 3;
+    contain: none;
+    content-visibility: visible;
+    background: linear-gradient(90deg, rgba(76, 224, 164, 0.16) 0%, rgba(76, 224, 164, 0.03) 100%) !important; /* Dégradé lumineux uni sur toute la ligne */
+    animation: hotRowGlowGreen 2.5s infinite ease-in-out;
+  }
+  @keyframes hotRowGlowGreen {
+    0%, 100% {
+      box-shadow: 0 0 8px rgba(76, 224, 164, 0.25);
+    }
+    50% {
+      box-shadow: 0 0 18px rgba(76, 224, 164, 0.55), inset 0 0 10px rgba(76, 224, 164, 0.08);
+    }
+  }
+
+  /* ---------- Prévisualisations réalistes de lignes dans la légende ---------- */
+  .legend-row-preview {
+    width: 100%;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    position: relative;
+    overflow: visible; /* Permet aux particules de flotter en dehors */
+    box-sizing: border-box;
+    border: 1px solid rgba(29, 51, 70, 0.4);
+    background: rgba(14, 24, 37, 0.45);
+    border-left: 4px solid rgba(29, 51, 70, 0.6);
+    margin-bottom: 8px;
+    color: var(--txt);
+  }
+  .legend-row-preview.row-hi {
+    background: rgba(76, 224, 164, 0.09) !important;
+    border-color: rgba(76, 224, 164, 0.35) !important;
+    border-left-color: var(--green) !important;
+  }
+  .legend-row-preview.row-lo {
+    background: rgba(255, 93, 108, 0.09) !important;
+    border-color: rgba(255, 93, 108, 0.35) !important;
+    border-left-color: var(--red) !important;
+  }
+  .legend-row-preview.hot-row {
+    background: rgba(84, 216, 255, 0.09) !important;
+    border-color: rgba(84, 216, 255, 0.45) !important;
+    border-left-color: var(--accent) !important;
+    animation: hotRowGlow 2.5s infinite ease-in-out;
+  }
+  .legend-row-preview.row-lo.hot-row {
+    background: rgba(255, 93, 108, 0.09) !important;
+    border-color: rgba(255, 93, 108, 0.45) !important;
+    border-left-color: var(--red) !important;
+    animation: hotRowGlowRed 2.5s infinite ease-in-out;
+  }
+  .legend-row-preview.row-hi.hot-row {
+    background: rgba(76, 224, 164, 0.09) !important;
+    border-color: rgba(76, 224, 164, 0.45) !important;
+    border-left-color: var(--green) !important;
+    animation: hotRowGlowGreen 2.5s infinite ease-in-out;
+  }
+
+  /* variables de style selon l'état de la ligne */
+  tbody tr.row-lo.hot-row, .legend-row-preview.row-lo.hot-row {
+    --p-color1: rgba(255, 255, 255, 1);
+    --p-color2: rgba(255, 159, 67, 0.95); /* orange vibrant (particules) */
+    --p-color3: rgba(255, 93, 108, 0.75);  /* rouge scintillant (particules) */
+    --p-glow: drop-shadow(0 0 2px rgba(255, 159, 67, 0.95)) drop-shadow(0 0 5px rgba(255, 93, 108, 0.65));
+    --p-border: rgba(255, 93, 108, 0.85);   /* Bordure rouge néon */
+    --p-glow-color: rgba(255, 93, 108, 0.4); /* Lueur rouge */
+  }
+  tbody tr.row-hi.hot-row, .legend-row-preview.row-hi.hot-row {
+    --p-color1: rgba(255, 255, 255, 1);
+    --p-color2: rgba(120, 255, 180, 0.95); /* vert menthe (particules) */
+    --p-color3: rgba(76, 224, 164, 0.75);  /* vert émeraude (particules) */
+    --p-glow: drop-shadow(0 0 2px rgba(120, 255, 180, 0.95)) drop-shadow(0 0 5px rgba(76, 224, 164, 0.65));
+    --p-border: rgba(76, 224, 164, 0.85);   /* Bordure verte néon */
+    --p-glow-color: rgba(76, 224, 164, 0.4); /* Lueur verte */
+  }
+  tbody tr.hot-row, .legend-row-preview.hot-row {
+    --p-color1: rgba(255, 255, 255, 1);
+    --p-color2: rgba(130, 240, 255, 0.95); /* bleu électrique (particules) */
+    --p-color3: rgba(22, 167, 216, 0.75);  /* bleu profond (particules) */
+    --p-glow: drop-shadow(0 0 2px rgba(130, 240, 255, 0.95)) drop-shadow(0 0 5px rgba(22, 167, 216, 0.65));
+    --p-border: rgba(84, 216, 255, 0.85);    /* Bordure bleue néon */
+    --p-glow-color: rgba(84, 216, 255, 0.4);  /* Lueur bleue */
+  }
+
+  /* 1. Bordure néon continue et unifiée autour de la ligne */
+  tbody tr.hot-row td:first-child::before, .legend-row-preview.hot-row::before {
+    content: "";
+    position: absolute;
+    inset: 0px; /* Parfaitement aligné sur la ligne */
+    pointer-events: none;
+    z-index: 4; /* Au-dessus du fond des cellules pour être visible */
+    border: 1.5px solid var(--p-border);
+    border-radius: 6px;
+    box-shadow: 0 0 10px var(--p-glow-color), inset 0 0 6px var(--p-glow-color);
+    animation: neonPulse 2.5s infinite ease-in-out;
+    opacity: 0.9;
+    background: none !important; /* Pas de fond pour ne pas masquer le texte */
+  }
+
+  /* 2. Particules vivantes qui orbitent le long des bordures avec mouvement organique */
+  tbody tr.hot-row td:first-child::after, .legend-row-preview.hot-row::after {
+    content: "";
+    position: absolute;
+    inset: -5px -7px;
+    pointer-events: none;
+    z-index: 10;
+    background-image: 
+      radial-gradient(circle, var(--p-color1) 0%, var(--p-color2) 40%, transparent 70%),
+      radial-gradient(circle, var(--p-color2) 0%, var(--p-color3) 35%, transparent 65%),
+      radial-gradient(circle, var(--p-color1) 0%, var(--p-color2) 30%, transparent 60%),
+      radial-gradient(circle, var(--p-color2) 0%, var(--p-color3) 40%, transparent 70%),
+      radial-gradient(circle, var(--p-color1) 0%, var(--p-color2) 35%, transparent 65%),
+      radial-gradient(circle, var(--p-color2) 0%, var(--p-color3) 30%, transparent 60%),
+      radial-gradient(circle, var(--p-color1) 0%, var(--p-color3) 35%, transparent 65%),
+      radial-gradient(circle, var(--p-color2) 0%, var(--p-color1) 30%, transparent 60%),
+      radial-gradient(circle, var(--p-color1) 0%, var(--p-color2) 40%, transparent 70%),
+      radial-gradient(circle, var(--p-color2) 0%, var(--p-color3) 35%, transparent 65%);
+    background-size: 5px 5px, 4px 4px, 6px 6px, 3px 3px, 5px 5px, 4px 4px, 7px 7px, 3px 3px, 5px 5px, 4px 4px;
+    background-repeat: no-repeat;
+    animation: sparkOrbitA 3s infinite linear, sparkFlicker 1.8s infinite ease-in-out;
+    filter: var(--p-glow);
+  }
+  
+  @keyframes neonPulse {
+    0%, 100% {
+      opacity: 0.85;
+      box-shadow: 0 0 8px var(--p-glow-color), inset 0 0 4px var(--p-glow-color);
+      border-color: var(--p-border);
+    }
+    50% {
+      opacity: 1;
+      box-shadow: 0 0 16px var(--p-glow-color), inset 0 0 8px var(--p-glow-color);
+      border-color: #ffffff;
+    }
+  }
+
+  /* Animation orbitale A : les particules voyagent le long du contour dans le sens horaire */
+  @keyframes sparkOrbitA {
+    0% {
+      background-position:
+        0% 0%,               /* P1 coin haut-gauche */
+        20% 0%,              /* P2 haut début */
+        45% 0%,              /* P3 haut milieu */
+        100% 0%,             /* P4 coin haut-droite */
+        100% 30%,            /* P5 droite début */
+        100% 100%,           /* P6 coin bas-droite */
+        60% 100%,            /* P7 bas milieu */
+        20% 100%,            /* P8 bas début */
+        0% 70%,              /* P9 gauche bas */
+        0% 30%;              /* P10 gauche haut */
+    }
+    12.5% {
+      background-position:
+        15% 0%,              /* P1 → haut */
+        40% 0%,              /* P2 → haut */
+        70% 0%,              /* P3 → haut */
+        100% 20%,            /* P4 → droite */
+        100% 60%,            /* P5 → droite */
+        80% 100%,            /* P6 → bas */
+        35% 100%,            /* P7 → bas */
+        0% 100%,             /* P8 → coin bas-gauche */
+        0% 45%,              /* P9 → gauche */
+        0% 0%;               /* P10 → coin haut-gauche */
+    }
+    25% {
+      background-position:
+        35% 0%,              /* P1 → haut */
+        65% 0%,              /* P2 → haut */
+        100% 0%,             /* P3 → coin haut-droite */
+        100% 45%,            /* P4 → droite */
+        100% 100%,           /* P5 → coin bas-droite */
+        55% 100%,            /* P6 → bas */
+        10% 100%,            /* P7 → bas */
+        0% 80%,              /* P8 → gauche */
+        0% 20%,              /* P9 → gauche */
+        10% 0%;              /* P10 → haut */
+    }
+    37.5% {
+      background-position:
+        60% 0%,
+        90% 0%,
+        100% 20%,
+        100% 70%,
+        80% 100%,
+        30% 100%,
+        0% 100%,
+        0% 55%,
+        0% 0%,
+        30% 0%;
+    }
+    50% {
+      background-position:
+        85% 0%,
+        100% 0%,
+        100% 45%,
+        100% 100%,
+        55% 100%,
+        5% 100%,
+        0% 80%,
+        0% 30%,
+        5% 0%,
+        55% 0%;
+    }
+    62.5% {
+      background-position:
+        100% 0%,
+        100% 25%,
+        100% 70%,
+        75% 100%,
+        30% 100%,
+        0% 100%,
+        0% 55%,
+        0% 10%,
+        25% 0%,
+        75% 0%;
+    }
+    75% {
+      background-position:
+        100% 25%,
+        100% 55%,
+        100% 100%,
+        50% 100%,
+        5% 100%,
+        0% 75%,
+        0% 30%,
+        0% 0%,
+        50% 0%,
+        100% 0%;
+    }
+    87.5% {
+      background-position:
+        100% 55%,
+        100% 85%,
+        80% 100%,
+        25% 100%,
+        0% 100%,
+        0% 50%,
+        0% 5%,
+        15% 0%,
+        75% 0%,
+        100% 0%;
+    }
+    100% {
+      background-position:
+        100% 100%,           /* → boucle continue */
+        100% 100%,
+        55% 100%,
+        0% 100%,
+        0% 70%,
+        0% 25%,
+        0% 0%,
+        40% 0%,
+        100% 0%,
+        100% 30%;
+    }
+  }
+
+  /* Scintillement vivant des particules : variation d'opacité et de taille */
+  @keyframes sparkFlicker {
+    0%   { opacity: 0.7; }
+    15%  { opacity: 1; }
+    30%  { opacity: 0.55; }
+    45%  { opacity: 0.95; }
+    60%  { opacity: 0.5; }
+    75%  { opacity: 1; }
+    85%  { opacity: 0.6; }
+    100% { opacity: 0.7; }
+  }
+
+  /* Désynchronisation des animations de particules par ligne pour un rendu organique (chaque ligne a son propre rythme) */
+  tbody tr.hot-row:nth-child(11n+1) td:first-child::after { animation-delay: -0.0s, -0.2s; }
+  tbody tr.hot-row:nth-child(11n+2) td:first-child::after { animation-delay: -0.5s, -0.9s; }
+  tbody tr.hot-row:nth-child(11n+3) td:first-child::after { animation-delay: -1.1s, -0.4s; }
+  tbody tr.hot-row:nth-child(11n+4) td:first-child::after { animation-delay: -1.7s, -1.3s; }
+  tbody tr.hot-row:nth-child(11n+5) td:first-child::after { animation-delay: -2.3s, -0.7s; }
+  tbody tr.hot-row:nth-child(11n+6) td:first-child::after { animation-delay: -0.8s, -1.5s; }
+  tbody tr.hot-row:nth-child(11n+7) td:first-child::after { animation-delay: -2.6s, -0.1s; }
+  tbody tr.hot-row:nth-child(11n+8) td:first-child::after { animation-delay: -0.3s, -1.1s; }
+  tbody tr.hot-row:nth-child(11n+9) td:first-child::after { animation-delay: -1.9s, -0.6s; }
+  tbody tr.hot-row:nth-child(11n+10) td:first-child::after { animation-delay: -1.4s, -1.7s; }
+  tbody tr.hot-row:nth-child(11n+11) td:first-child::after { animation-delay: -2.1s, -0.3s; }
+
+  /* Désynchronisation de la pulsation respiratoire de la bordure néon */
+  tbody tr.hot-row:nth-child(7n+1) td:first-child::before { animation-delay: -1.2s; }
+  tbody tr.hot-row:nth-child(7n+2) td:first-child::before { animation-delay: -0.3s; }
+  tbody tr.hot-row:nth-child(7n+3) td:first-child::before { animation-delay: -2.1s; }
+  tbody tr.hot-row:nth-child(7n+4) td:first-child::before { animation-delay: -0.8s; }
+  tbody tr.hot-row:nth-child(7n+5) td:first-child::before { animation-delay: -1.7s; }
+  tbody tr.hot-row:nth-child(7n+6) td:first-child::before { animation-delay: -2.5s; }
+  tbody tr.hot-row:nth-child(7n+7) td:first-child::before { animation-delay: -0.1s; }
+  /* Nom de l'item en surbrillance sobre pour les hot-row */
+  tbody tr.hot-row .itemlink > span {
+    color: #ffffff;
+    font-weight: 800;
+    text-shadow: 0 0 6px rgba(84, 216, 255, 0.4);
+  }
+  tbody tr.hot-row .itemlink:hover > span {
+    text-shadow: 0 0 12px rgba(84, 216, 255, 0.7);
+  }
   .tag{display:inline-block;padding:2px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;background:var(--panel2);color:var(--muted);margin-right:4px;clip-path:var(--cut)}
   .tag.prime{background:rgba(255,206,90,.14);color:var(--gold)}
   .tag.mod{background:rgba(70,211,255,.14);color:var(--accent)}
@@ -153,7 +663,7 @@
   .alrt{padding:3px 9px;font-size:13px;font-weight:700;line-height:1;border:1px solid var(--border);background:var(--panel2);
     color:var(--muted);cursor:pointer;clip-path:var(--cut);transition:.12s;margin-right:4px}
   /* flèche de tendance du prix (live) */
-  .trend{font-size:11px;margin-right:5px;vertical-align:1px;font-weight:700}
+  .trend{font-size:12px;margin-right:5px;vertical-align:1px;font-weight:900}
   .trend.up{color:var(--green);text-shadow:0 0 6px rgba(76,224,164,.5)}
   .trend.down{color:var(--red);text-shadow:0 0 6px rgba(255,93,108,.5)}
   .sales{margin-left:8px;font-size:11px;color:var(--gold);font-weight:600;font-variant-numeric:tabular-nums;
@@ -161,13 +671,31 @@
   .alrt:hover{border-color:var(--accent);color:var(--txt)}
   .alrt.lo.on{border-color:var(--red);color:var(--red);background:rgba(255,93,108,.16);box-shadow:0 0 8px rgba(255,93,108,.4)}
   .alrt.hi.on{border-color:var(--green);color:var(--green);background:rgba(76,224,164,.16);box-shadow:0 0 8px rgba(76,224,164,.4)}
-  /* contour ligne : prix au plus haut (vert) / au plus bas (rouge) */
-  tr.row-hi td{border-top:1px solid var(--green);border-bottom:1px solid var(--green);background:rgba(76,224,164,.07)}
-  tr.row-hi td:first-child{border-left:2px solid var(--green)}
-  tr.row-hi td:last-child{border-right:2px solid var(--green)}
-  tr.row-lo td{border-top:1px solid var(--red);border-bottom:1px solid var(--red);background:rgba(255,93,108,.07)}
-  tr.row-lo td:first-child{border-left:2px solid var(--red)}
-  tr.row-lo td:last-child{border-right:2px solid var(--red)}
+  
+  /* contour ligne : prix au plus haut (vert) / au plus bas (rouge) - rendu très discret pour contraster avec les affaires */
+  tr.row-hi td {
+    background: rgba(76, 224, 164, 0.02) !important; /* Très discret, pas de lueur ni de confusion avec les lignes animées */
+    border-top: 1px solid rgba(76, 224, 164, 0.15) !important;
+    border-bottom: 1px solid rgba(76, 224, 164, 0.15) !important;
+  }
+  tr.row-hi td:first-child {
+    border-left: 3px solid rgba(76, 224, 164, 0.6) !important; /* Simple indicateur fin */
+  }
+  tr.row-hi td:last-child {
+    border-right: 1px solid rgba(76, 224, 164, 0.15) !important;
+  }
+
+  tr.row-lo td {
+    background: rgba(255, 93, 108, 0.02) !important; /* Très discret, pas de lueur ni de confusion avec les lignes animées */
+    border-top: 1px solid rgba(255, 93, 108, 0.15) !important;
+    border-bottom: 1px solid rgba(255, 93, 108, 0.15) !important;
+  }
+  tr.row-lo td:first-child {
+    border-left: 3px solid rgba(255, 93, 108, 0.6) !important; /* Simple indicateur fin */
+  }
+  tr.row-lo td:last-child {
+    border-right: 1px solid rgba(255, 93, 108, 0.15) !important;
+  }
   .badge{background:linear-gradient(180deg,rgba(84,216,255,.18),rgba(84,216,255,.08));color:var(--accent);padding:3px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;clip-path:var(--cut);border:1px solid rgba(84,216,255,.25)}
   .badge.scan{background:linear-gradient(180deg,rgba(76,224,164,.2),rgba(76,224,164,.08));color:var(--green);border-color:rgba(76,224,164,.3)}
   .vault{display:inline-block;padding:2px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;clip-path:var(--cut)}
@@ -407,6 +935,7 @@
     flex: 1;
     padding: 0;
     min-width: 0;
+    overflow-x: clip; /* clip (pas auto) : empêche le débordement sans casser position:sticky des th */
   }
   
   /* Sidebar */
@@ -422,6 +951,7 @@
     height: calc(100vh - 130px);
     position: sticky;
     top: 80px;
+    z-index: 30; /* Assure que la barre latérale reste au-dessus des lignes animées */
     transition: width 0.3s ease, margin 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
     will-change: transform, opacity;
   }
@@ -761,6 +1291,84 @@
     height: 28px;
     padding: 0;
   }
+  
+  /* --- PANNEAU LÉGENDE --- */
+  .legend-sec {
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(29, 51, 70, 0.4);
+    padding-bottom: 15px;
+  }
+  .legend-sec:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .legend-sec h4 {
+    font-family: "Orbitron", sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--accent);
+    margin: 0 0 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .legend-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .legend-preview-bar {
+    width: 6px;
+    height: 38px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .legend-preview-bar.orange {
+    background: #ff9f43;
+    box-shadow: 0 0 8px #ff9f43;
+  }
+  .legend-preview-bar.green {
+    background: var(--green);
+  }
+  .legend-preview-bar.red {
+    background: var(--red);
+  }
+  .legend-desc {
+    flex: 1;
+    color: var(--txt);
+  }
+  .legend-desc b {
+    color: #fff;
+    display: block;
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+  .legend-desc p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  
+  /* Badge RGB preview in legend */
+  .legend-rgb-text {
+    background: linear-gradient(to right, #ff5d6c, #ff9f43, #ffce5a, #4ce0a4, #54d8ff, #a29bfe, #ff5d6c);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+    animation: rgbText 3s linear infinite;
+    font-family: "Orbitron", sans-serif;
+  }
 
   /* Responsive */
   @media (max-width: 1200px) {
@@ -900,7 +1508,7 @@
           <th data-k="plat" class="num"><span data-i18n="col_plat">Platine</span> <span class="arrow">▼</span></th>
           <th data-k="slast" class="num" title="Prix de la dernière vente conclue"><span data-i18n="col_last">Dern. vente</span> <span class="arrow"></span></th>
           <th data-k="smax" class="num" title="Fourchette des ventes 48 h (min–max)"><span data-i18n="col_sold">Vendu 48h</span> <span class="arrow"></span></th>
-          <th title="Sets : set vs total des pièces. Reliques : prix vs meilleur loot."><span data-i18n="col_deal">Affaire</span></th>
+          <th data-k="deal" title="Sets : set vs total des pièces. Reliques : prix vs meilleur loot."><span data-i18n="col_deal">Affaire</span> <span class="arrow"></span></th>
           <th data-k="sales" class="num" title="Ventes détectées en direct depuis l'ouverture"><span data-i18n="col_sales">Ventes</span> <span class="arrow"></span></th>
           <th title="Message privé in-game au vendeur le moins cher"><span data-i18n="col_mp">MP</span></th>
           <th title="Notifications de prix"><span data-i18n="col_alert">Alerte</span></th>
@@ -915,6 +1523,7 @@
     <div class="sb-tabs">
       <div id="sbTabWorld" class="sb-tab active" onclick="switchSbTab('world')">État du Monde</div>
       <div id="sbTabLog" class="sb-tab" onclick="switchSbTab('log')">Analyseur EE.log</div>
+      <div id="sbTabLegend" class="sb-tab" onclick="switchSbTab('legend')">Légende</div>
     </div>
     <div class="sb-content">
       <!-- Panneau 1 : État du Monde -->
@@ -995,6 +1604,133 @@
         </div>
       </div>
     </div>
+
+    <!-- Panneau 3 : Légende -->
+    <div id="sbPaneLegend" class="sb-pane">
+      <div class="sb-sec">
+        <h3>📖 Légende du Tracker</h3>
+        
+        <!-- Section 1 : Couleurs des lignes -->
+        <div class="legend-sec">
+          <h4>🎨 Codes couleur des lignes</h4>
+          <div class="legend-list">
+            
+            <div class="legend-item" style="flex-direction: column; gap: 4px; align-items: stretch;">
+              <div class="legend-row-preview hot-row">
+                <span class="legend-rgb-text">Exemple Item (Affaire)</span>
+                <span class="plat">45 PL</span>
+              </div>
+              <div class="legend-desc" style="margin-left: 4px; margin-bottom: 6px;">
+                <b>Contour Bleu & Particules Orange</b>
+                <p>Affaire exceptionnelle (prix moyen). Objet très recherché avec une forte rentabilité potentielle.</p>
+              </div>
+            </div>
+            
+            <div class="legend-item" style="flex-direction: column; gap: 4px; align-items: stretch;">
+              <div class="legend-row-preview row-lo hot-row">
+                <span class="legend-rgb-text">Exemple Item (Affaire)</span>
+                <span class="verdict save hot">🔥 +25 PL</span>
+              </div>
+              <div class="legend-desc" style="margin-left: 4px; margin-bottom: 6px;">
+                <b>Contour Rouge & Particules Orange</b>
+                <p>Affaire exceptionnelle au <b>prix le plus bas historique</b>. Opportunité d'achat ou de farm absolue !</p>
+              </div>
+            </div>
+
+            <div class="legend-item" style="flex-direction: column; gap: 4px; align-items: stretch;">
+              <div class="legend-row-preview row-hi hot-row">
+                <span class="legend-rgb-text">Exemple Item (Affaire)</span>
+                <span class="plat">80 PL</span>
+              </div>
+              <div class="legend-desc" style="margin-left: 4px; margin-bottom: 6px;">
+                <b>Contour Vert & Particules Orange</b>
+                <p>Affaire exceptionnelle au <b>prix le plus haut historique</b> (très rare).</p>
+              </div>
+            </div>
+
+            <div class="legend-item" style="flex-direction: column; gap: 4px; align-items: stretch;">
+              <div class="legend-row-preview row-hi">
+                <span>Exemple Item (Normal)</span>
+                <span class="plat" style="color:var(--green)">95 PL</span>
+              </div>
+              <div class="legend-desc" style="margin-left: 4px; margin-bottom: 6px;">
+                <b>Contour Vert Simple (row-hi)</b>
+                <p>Prix Élevé. Le prix est au plus haut des dernières 48h. Excellent pour vendre vos stocks.</p>
+              </div>
+            </div>
+
+            <div class="legend-item" style="flex-direction: column; gap: 4px; align-items: stretch;">
+              <div class="legend-row-preview row-lo">
+                <span>Exemple Item (Normal)</span>
+                <span class="plat" style="color:var(--red)">5 PL</span>
+              </div>
+              <div class="legend-desc" style="margin-left: 4px; margin-bottom: 6px;">
+                <b>Contour Rouge Simple (row-lo)</b>
+                <p>Prix Bas. Le prix est au plus bas des dernières 48h. Idéal pour acheter à bas coût.</p>
+              </div>
+            </div>
+
+            <div class="legend-item" style="flex-direction: column; gap: 4px; align-items: stretch;">
+              <div class="legend-row-preview">
+                <span>Exemple Item (Normal)</span>
+                <span class="plat" style="color:var(--muted)">30 PL</span>
+              </div>
+              <div class="legend-desc" style="margin-left: 4px; margin-bottom: 6px;">
+                <b>Contour Neutre (Normal)</b>
+                <p>Prix standard dans la moyenne du marché.</p>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+        
+        <!-- Section 2 : Effet RGB -->
+        <div class="legend-sec">
+          <h4>🌈 Noms d'Items en RGB</h4>
+          <div class="legend-list">
+            <div class="legend-item">
+              <div style="flex-shrink:0; margin-top:2px; font-size:16px;">✨</div>
+              <div class="legend-desc">
+                <b>Noms illuminés en <span class="legend-rgb-text">RGB Défilant</span></b>
+                <p>Indique une <b>Super Affaire active</b> répondant à 2 critères stricts :</p>
+                <p style="margin-top:4px; font-weight:600; color:var(--accent);">1. Forte demande : au moins 10 ventes réelles conclues dans les dernières 48h.</p>
+                <p style="margin-top:2px; font-weight:600; color:var(--accent);">2. Opportunité de prix : soit un vendeur en ligne unique au prix le plus bas, soit un écart de prix ≥ 20 PL entre le prix actuel et le prix maximum statistique.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3 : Les Affaires (Badges avec animations réelles) -->
+        <div class="legend-sec">
+          <h4>💰 Badges de la colonne "Affaire"</h4>
+          <div class="legend-list">
+            <div class="legend-item">
+              <div style="flex-shrink:0; width:110px; text-align:center;"><span class="verdict save hot">🔥 +25 PL</span></div>
+              <div class="legend-desc">
+                <b>Très Positif (Orange Animé)</b>
+                <p>Affaire en or. Animation de rebond dynamique et étincelles de particules orange.</p>
+              </div>
+            </div>
+            <div class="legend-item">
+              <div style="flex-shrink:0; width:110px; text-align:center;"><span class="verdict save">💰 +12 PL</span></div>
+              <div class="legend-desc">
+                <b>Positif (Vert Animé)</b>
+                <p>Bonne affaire. Animation de respiration douce verte.</p>
+              </div>
+            </div>
+            <div class="legend-item">
+              <div style="flex-shrink:0; width:110px; text-align:center;"><span class="verdict warn">⚠️ Set +15 PL</span></div>
+              <div class="legend-desc">
+                <b>Négatif (Rouge Animé)</b>
+                <p>Alerte de surcoût ou mauvaise affaire. Animation de respiration douce rouge.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
   </aside>
 </div>
 
@@ -1309,7 +2045,7 @@ async function poolFetch(url){
   throw lastErr || new Error("réseau (pool de proxies saturé)");
 }
 
-async function fetchJSON(url){
+async function fetchJSON(url, nocache = false){
   // Si la page est exécutée en local (file://), le navigateur bloque les requêtes directes (CORS).
   // On doit donc tout faire passer par le proxy CORS dans ce cas.
   const proxied = url.includes("warframe.market") || url.includes("relics.run") || location.protocol === "file:";
@@ -1327,7 +2063,7 @@ async function fetchJSON(url){
   // 2. Si on est sur un serveur web (HTTP/HTTPS), on essaie d'utiliser notre proxy local/Vercel (/proxy)
   if(location.protocol.startsWith("http")){
     try {
-      const r = await fetch(`/proxy?url=${encodeURIComponent(url)}`);
+      const r = await fetch(`/proxy?url=${encodeURIComponent(url)}${nocache ? '&nocache=1' : ''}`);
       if(r.ok) {
         return await r.json();
       }
@@ -1386,6 +2122,7 @@ function exportDatabase() {
     const orders = getVal('orders');
     const perTrade = getVal('perTrade');
     const rawPrice = getVal('rawPrice');
+    const singleLowSeller = getVal('singleLowSeller');
     
     let statsTs = undefined;
     if (memoryItem && memoryItem._statsTs) statsTs = memoryItem._statsTs;
@@ -1405,6 +2142,7 @@ function exportDatabase() {
     if (orders !== undefined) item.orders = orders;
     if (perTrade !== undefined) item.perTrade = perTrade;
     if (rawPrice !== undefined) item.rawPrice = rawPrice;
+    if (singleLowSeller !== undefined) item.singleLowSeller = singleLowSeller;
     if (statsTs !== undefined) item.statsTs = statsTs;
     if (ts !== undefined) item.ts = ts;
 
@@ -1445,6 +2183,7 @@ async function loadItems(){
       scanned:!!c || hasStaticStats,
       perTrade:c?c.perTrade:(it.perTrade!==undefined?it.perTrade:1),
       rawPrice:c?c.rawPrice:(it.rawPrice!==undefined?it.rawPrice:null),
+      singleLowSeller:c?(c.singleLowSeller||false):(it.singleLowSeller||false),
       _statsTs:c?c.statsTs:(it.statsTs!==undefined?it.statsTs:0),
       vaulted:vaultStatus(it.name), tradable:tradableStatus(it.name),
       drop:dropInfo(it.name), relicRewards:relicContents(it.name),
@@ -1475,6 +2214,9 @@ function buildView(){
     // masquer les items dont le prix dépasse la vente 48h (sur-cotés)
     if(d.plat!=null && d.smax!=null && d.plat>d.smax) return false;
     
+    // Masquer les objets dont le prix actuel est strictement inférieur au prix minimum enregistré des ventes (probables faux ordres / manipulations)
+    if(d.plat!=null && d.smin!=null && d.plat < d.smin) return false;
+    
     // Mode Super Vente : uniquement prix au plus bas historique ou très rentable
     if(superSale){
       if(d.plat==null) return false;
@@ -1494,7 +2236,35 @@ function applyFilter(){
   startScan();      // (re)lance le scan sur la nouvelle sélection
   savePrefs();
 }
+function getDealValue(d) {
+  if (d.plat == null) return null;
+  if (d.isSet) {
+    return d.setTotal != null ? (d.setTotal - d.plat) : null;
+  }
+  if (isRelicItem(d)) {
+    return d.relicBest != null ? (d.relicBest - d.plat) : null;
+  }
+  return d.slast != null ? (d.slast - d.plat) : null;
+}
+
 function cmp(a,b){
+  if (sortKey === "deal") {
+    // 1. Trier d'abord par statut RGB (les plus rentables selon les critères stricts)
+    const hotA = isHotRow(a) ? 1 : 0;
+    const hotB = isHotRow(b) ? 1 : 0;
+    if (hotA !== hotB) {
+      return sortDir * (hotA - hotB);
+    }
+    
+    // 2. Si les deux ont le même statut, trier par valeur de profit numérique
+    const valA = getDealValue(a);
+    const valB = getDealValue(b);
+    const an = valA == null, bn = valB == null;
+    if (an && bn) return 0;
+    if (an) return 1;
+    if (bn) return -1;
+    return sortDir * (valA - valB);
+  }
   let A=a[sortKey],B=b[sortKey];
   if(sortKey==="name") return sortDir*A.localeCompare(B);
   if(sortKey==="tags") return sortDir*a.tags.join().localeCompare(b.tags.join());
@@ -1602,10 +2372,13 @@ function dealCell(d){
 // "très rentable" pour la mise en évidence de la ligne entière
 function isHotRow(d){
   if(d.plat==null) return false;
-  if(d.isSet && d.setTotal!=null){ const g=d.setTotal-d.plat; return g>0 && hotGain(g,d.setTotal); }
-  if(isRelicItem(d) && d.relicBest!=null){ const g=d.relicBest-d.plat; return g>0 && hotGain(g,d.plat); }
-  if(!d.isSet && !isRelicItem(d) && d.slast!=null){ const g=d.slast-d.plat; return g>0 && hotGain(g,d.plat); }
-  return false;
+  
+  const hasSingleLowSeller = d.singleLowSeller === true;
+  // 20 PL ou plus de différence entre le prix affiché (d.plat) et le prix maximum enregistré (d.smax)
+  const hasHighProfit = d.smax != null && (d.smax - d.plat) >= 20; 
+  const isHeavilySold = d.svol != null && d.svol >= 10; // Énormément vendu (au moins 10 ventes conclues dans les dernières 48h)
+  
+  return (hasSingleLowSeller || hasHighProfit) && isHeavilySold;
 }
 // calcul lazy : prix du loot le plus cher d'une relique
 const relicDealQueue=[]; let relicDealBusy=0;
@@ -1747,23 +2520,7 @@ function render(){
 function markHot(tr,on){
   if(!tr) return;
   tr.classList.toggle("hot-row",on);
-  if(!on){ tr.style.boxShadow=""; tr.style.outline=""; tr.style.outlineOffset=""; for(const td of tr.children){ td.style.background=""; td.style.boxShadow=""; } }
 }
-// boucle rAF throttlée (~30 fps), en pause si l'onglet est caché ou s'il n'y a aucune ligne rentable
-let _hotLast=0;
-function hotTick(ts){
-  requestAnimationFrame(hotTick);
-  if(document.hidden || ts-_hotLast<33) return;          // ~30 fps max
-  _hotLast=ts;
-  const rows=rowsEl.querySelectorAll("tr.hot-row");
-  if(!rows.length) return;
-  // simple contour RGB qui tourne (teinte cyclique, sans fond ni clignotement)
-  const hue=Math.round((ts/3000*360)%360);                // tour complet ~3 s, fluide
-  const c=`hsl(${hue},100%,60%)`;
-  const shadow=`0 0 0 2px ${c}, 0 0 7px hsla(${hue},100%,60%,.45)`;
-  rows.forEach(tr=>{ tr.style.boxShadow=shadow; });
-}
-requestAnimationFrame(hotTick);
 function patchRow(d,flash){
   const cell=rowsEl.querySelector(`.pcell[data-slug="${CSS.escape(d.slug)}"]`);
   if(cell){
@@ -1779,7 +2536,7 @@ function patchRow(d,flash){
   const lc=rowsEl.querySelector(`.lastcell[data-slug="${CSS.escape(d.slug)}"]`); if(lc) lc.innerHTML=lastCell(d);
   const sc=rowsEl.querySelector(`.soldcell[data-slug="${CSS.escape(d.slug)}"]`); if(sc) sc.innerHTML=soldCell(d);
   const vc=rowsEl.querySelector(`.salescell[data-slug="${CSS.escape(d.slug)}"]`); if(vc) vc.innerHTML=salesCell(d);
-  if(d.isSet||isRelicItem(d)){ const dc=rowsEl.querySelector(`.dealcell[data-slug="${CSS.escape(d.slug)}"]`); if(dc) dc.innerHTML=dealCell(d); }
+  const dc=rowsEl.querySelector(`.dealcell[data-slug="${CSS.escape(d.slug)}"]`); if(dc) dc.innerHTML=dealCell(d);
   const mc=rowsEl.querySelector(`tr[data-slug="${CSS.escape(d.slug)}"] .mpcell`); if(mc) mc.outerHTML=mpCell(d);
   checkAlerts(d);
   if(typeof pvSlug!=="undefined"&&d.slug===pvSlug){ previewEl.innerHTML=buildPreview(d); }
@@ -1799,6 +2556,7 @@ function cacheSet(d){
     orders:d.orders,
     perTrade:d.perTrade,
     rawPrice:d.rawPrice,
+    singleLowSeller:d.singleLowSeller,
     ts:Date.now(),
     statsTs: d._statsScanned ? Date.now() : (oldC.statsTs || 0)
   };
@@ -1814,7 +2572,10 @@ function computePrice(d,orders){
     .filter(o=>o.type==="sell"&&o.user&&
       (o.user.status==="ingame"||o.user.status==="online"))
     .sort((a,b)=>a.platinum-b.platinum);
-  if(!sells.length){ d.plat=null; d.online=0; d.lowSeller=null; d.perTrade=1; d.rawPrice=null; }
+  if(!sells.length){ 
+    d.plat=null; d.online=0; d.lowSeller=null; d.perTrade=1; d.rawPrice=null; 
+    d.singleLowSeller=false;
+  }
   else{
     const o=sells[0];
     d.perTrade=o.perTrade||o.per_trade||1;
@@ -1826,6 +2587,8 @@ function computePrice(d,orders){
     } else {
       d.plat = o.platinum;
     }
+    // Détecter s'il n'y a qu'un seul vendeur en ligne au prix le plus bas
+    d.singleLowSeller = (sells.length === 1 || sells[1].platinum > o.platinum);
   }
   d._approxPlat=false;   // prix live réel -> n'est plus une approximation du dump
   // tendance instantanée : le prix monte (up) ou baisse (down) vs le dernier relevé
@@ -2002,15 +2765,43 @@ let watchTimer=null, watchBusy=false;
 
 async function watchOne(d){
   let j;
-  try{ j=await fetchJSON(`${API}/orders/item/${d.slug}`); }catch{ return; }
+  try{ j=await fetchJSON(`${API}/orders/item/${d.slug}`, true); }catch{ return; }
   const orders=j.data||[];
-  // ventes détectées en direct : ordres de vente visibles disparus depuis le dernier poll
-  const ids=new Set(orders.filter(o=>o.type==="sell"&&o.visible!==false).map(o=>o.id));
-  if(d._ids){
-    let gone=0; for(const id of d._ids) if(!ids.has(id)) gone++;
-    if(gone) d.sales=(d.sales||0)+gone;
+  
+  // Filtrer les ordres de vente actifs (vendeurs en ligne ou en jeu)
+  const currentSells = orders.filter(o=>o.type==="sell"&&o.visible!==false&&o.user&&(o.user.status==="ingame"||o.user.status==="online"));
+  const ids = new Set(currentSells.map(o=>o.id));
+  
+  let soldPrices = [];
+  if(d._sellOrdersMap){
+    // Identifier les ordres du poll précédent qui ont disparu (vendus)
+    for(const id of d._sellOrdersMap.keys()){
+      if(!ids.has(id)){
+        soldPrices.push(d._sellOrdersMap.get(id));
+      }
+    }
+    
+    if(soldPrices.length > 0){
+      // Mettre à jour le compteur de ventes en direct
+      d.sales = (d.sales||0) + soldPrices.length;
+      
+      // Estimer le prix de vente (le moins cher des ordres disparus)
+      const soldPrice = Math.min(...soldPrices);
+      
+      // Mettre à jour en direct les statistiques de vente
+      d.slast = soldPrice;
+      d.svol = (d.svol||0) + soldPrices.length;
+      if(d.smin == null || soldPrice < d.smin) d.smin = soldPrice;
+      if(d.smax == null || soldPrice > d.smax) d.smax = soldPrice;
+      
+      // Jouer une alerte sonore subtile de transaction
+      if(typeof sfxAlert === "function") sfxAlert();
+    }
   }
-  d._ids=ids;
+  
+  // Sauvegarder l'état des ordres actuels pour le prochain poll
+  d._sellOrdersMap = new Map(currentSells.map(o=>[o.id, o.platinum]));
+  d._ids = ids;
   
   // Notification live : l'item était offline (scanné sans vendeur) et devient disponible à très bas prix
   const wasOffline = (d.scanned && d.plat === null);
@@ -2083,6 +2874,17 @@ $("#filtersBtn").addEventListener("click",()=>{
   $("#filtersBtn").classList.toggle("on",on);
   prefs.filtersOpen=on?1:0; try{localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));}catch{}
 });
+
+/* ---------- cale le thead sticky juste sous l'en-tête (hauteur réelle, même quand
+   les contrôles/filtres s'enroulent sur plusieurs lignes) -> évite le chevauchement de l'item 1 ---------- */
+const _headerEl=document.querySelector("header");
+function syncHeadHeight(){
+  if(!_headerEl) return;
+  document.documentElement.style.setProperty("--head-h", Math.round(_headerEl.offsetHeight)+"px");
+}
+syncHeadHeight();
+if(window.ResizeObserver){ new ResizeObserver(syncHeadHeight).observe(_headerEl); }
+else { window.addEventListener("resize", syncHeadHeight); }
 document.querySelectorAll("th[data-k]").forEach(th=>{
   th.onclick=()=>{
     const k=th.dataset.k;
@@ -2588,8 +3390,10 @@ function toggleSidebar() {
 function switchSbTab(tab) {
   $("#sbTabWorld").classList.toggle("active", tab === 'world');
   $("#sbTabLog").classList.toggle("active", tab === 'log');
+  $("#sbTabLegend").classList.toggle("active", tab === 'legend');
   $("#sbPaneWorld").classList.toggle("active", tab === 'world');
   $("#sbPaneLog").classList.toggle("active", tab === 'log');
+  $("#sbPaneLegend").classList.toggle("active", tab === 'legend');
   if (typeof sfxClick === "function") sfxClick();
 }
 
@@ -2971,15 +3775,12 @@ function selectChatPartner(partner, forceRefresh = false) {
     if (location.protocol === "file:" && (e.message.includes("403") || e.message.includes("400") || e.message.includes("réseau") || e.message.includes("fetch") || e.message.includes("Failed to fetch"))) {
       msg = `
         <div style="padding: 16px 20px; border: 1px solid var(--red); background: rgba(255, 93, 108, 0.08); color: var(--txt); margin: 15px 0; line-height: 1.6; font-size: 13.5px; clip-path: var(--cut); max-width: 800px;">
-          <b style="color: var(--red); font-size: 15px; display: block; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">🔒 Erreur de sécurité CORS / Proxy (HTTP 403 / 400)</b>
-          Vous exécutez ce fichier en double-cliquant directement sur votre disque (protocole <code>file://</code>).<br>
-          Les serveurs de proxies CORS gratuits (ex: <i>corsproxy.io</i>) bloquent désormais l'accès direct depuis les fichiers locaux pour éviter les abus.<br><br>
-          <b>Comment résoudre ce problème et charger les prix instantanément :</b><br>
-          1. Ouvrez un terminal dans le dossier contenant ce fichier.<br>
-          2. Lancez un serveur local léger en exécutant la commande :<br>
-             <code style="background: var(--panel); padding: 3px 8px; display: inline-block; margin: 4px 0; border: 1px solid var(--border);">npx http-server</code> ou bien <code style="background: var(--panel); padding: 3px 8px; display: inline-block; margin: 4px 0; border: 1px solid var(--border);">python -m http.server</code><br>
-          3. Ouvrez l'adresse locale indiquée par la commande (ex: <code style="color: var(--accent);">http://localhost:8080/warframe-tracker.html</code>) dans votre navigateur.<br><br>
-          <i>Le serveur local fournira un domaine <code>localhost</code> valide, ce qui débloquera instantanément les requêtes gratuites du proxy.</i>
+          <b style="color: var(--red); font-size: 15px; display: block; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">🔒 Proxy local non lancé (Protocole file://)</b>
+          Vous exécutez ce fichier en double-cliquant directement sur le fichier HTML de votre disque.<br>
+          Pour que le cache local fonctionne et éviter les blocages de sécurité (CORS) :<br><br>
+          <b>Solution la plus simple :</b><br>
+          Double-cliquez simplement sur le fichier <code style="background: var(--panel); color: var(--accent); padding: 3px 8px; border: 1px solid var(--border); font-weight: bold;">lancer_tracker.bat</code> présent dans ce dossier.<br><br>
+          <i>Cela lancera automatiquement le serveur avec son système de cache et ouvrira le tracker dans votre navigateur à l'adresse : <code style="color: var(--accent);">http://localhost:8088</code>.</i>
         </div>
       `;
     }
