@@ -569,7 +569,7 @@ function cacheGet(slug){const c=priceCache[slug];return (c&&Date.now()-c.ts<CACH
 /* ---------- fetch résilient avec limitation de débit (rate limiting) ---------- */
 let directSupported = true;
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 380; // ms (approx 2.6 requêtes/sec, sous la limite de 3/sec)
+const MIN_REQUEST_INTERVAL = 340; // ms (approx 2.9 requêtes/sec, sous la limite de 3/sec)
 let requestQueue = Promise.resolve();
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -660,7 +660,7 @@ async function loadItems(){
       tags:it.tags||[], plat:c?c.plat:null, online:c?c.online:0,
       smin:c?c.smin:null, smax:c?c.smax:null, svol:c?c.svol:null, slast:c?c.slast:null,
       orders:c&&c.orders!=null?c.orders:null, scanned:!!c,
-      perTrade:c?c.perTrade:1, rawPrice:c?c.rawPrice:null,
+      perTrade:c?c.perTrade:1, rawPrice:c?c.rawPrice:null, _statsTs:c?c.statsTs:0,
       vaulted:vaultStatus(it.name), tradable:tradableStatus(it.name),
       drop:dropInfo(it.name), relicRewards:relicContents(it.name),
       droppable:!!dropInfo(it.name), err:null, loading:false
@@ -941,7 +941,22 @@ function patchRow(d,flash){
 /* ---------- scanner de prix en arrière-plan ---------- */
 // écrit l'état prix de l'item dans le cache
 function cacheSet(d){
-  priceCache[d.slug]={plat:d.plat,online:d.online,smin:d.smin,smax:d.smax,svol:d.svol,slast:d.slast,orders:d.orders,perTrade:d.perTrade,rawPrice:d.rawPrice,ts:Date.now()};
+  const oldC = priceCache[d.slug] || {};
+  priceCache[d.slug]={
+    plat:d.plat,
+    online:d.online,
+    smin:d.smin,
+    smax:d.smax,
+    svol:d.svol,
+    slast:d.slast,
+    orders:d.orders,
+    perTrade:d.perTrade,
+    rawPrice:d.rawPrice,
+    ts:Date.now(),
+    statsTs: d._statsScanned ? Date.now() : (oldC.statsTs || 0)
+  };
+  if (d._statsScanned) d._statsTs = Date.now();
+  d._statsScanned = false;
 }
 // prix EN VENTE actuellement : bleu = le plus bas offert par un vendeur en ligne
 function computePrice(d,orders){
@@ -994,14 +1009,23 @@ function applyStats(d,payload){
 async function fetchStats(d){
   try{
     const j=await fetchJSON(`https://api.warframe.market/v1/items/${d.slug}/statistics`);
+    d._statsScanned = true;
     applyStats(d,j.payload);
   }catch(e){ /* on garde l'ancienne stat si échec */ }
 }
 async function fetchPrice(d){
-  const [ordersRes]=await Promise.allSettled([
-    fetchJSON(`${API}/orders/item/${d.slug}`).then(j=>computePrice(d,j.data||[])),
-    fetchStats(d)
-  ]);
+  const STATS_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 heures
+  const now = Date.now();
+  const needStats = !d._statsTs || (now - d._statsTs > STATS_CACHE_TTL) || d.smin == null;
+  
+  const promises = [
+    fetchJSON(`${API}/orders/item/${d.slug}`).then(j=>computePrice(d,j.data||[]))
+  ];
+  if(needStats){
+    promises.push(fetchStats(d));
+  }
+  
+  const [ordersRes]=await Promise.allSettled(promises);
   d.err = ordersRes.status==="rejected" ? "erreur" : null;
   d.loading=false;
 }
@@ -1018,7 +1042,7 @@ function scheduleResort(){
 async function startScan(force){
   const gen=++scanGen;                 // invalide tout scan précédent
   const queue=VIEW.filter(d=>{
-    if(force){d.err=null;return true;}
+    if(force){d.err=null; d._statsTs=0; return true;}
     if(cacheGet(d.slug)){
       const c=cacheGet(d.slug);
       d.plat=c.plat;
@@ -1028,6 +1052,7 @@ async function startScan(force){
       d.svol=c.svol;
       d.perTrade=c.perTrade||1;
       d.rawPrice=c.rawPrice||c.plat;
+      d._statsTs=c.statsTs||0;
       return false;
     }
     return d.plat==null || d.err;
