@@ -321,8 +321,7 @@ const CDN="https://warframe.market/static/assets/";
 // --- CONFIGURATION HÉBERGEMENT EN LIGNE (CLOUDFLARE) ---
 // Remplacez par l'URL de votre Cloudflare Worker une fois déployé
 // Exemple : "https://mon-proxy.mon-pseudo.workers.dev"
-const CLOUDFLARE_WORKER_URL = "https://warframe-proxy.energiecraftonline-afk.workers.dev";
-
+const CLOUDFLARE_WORKER_URL = ""; 
 
 const PROXIES=[
   u=>u,                                                   // direct
@@ -605,9 +604,9 @@ async function fetchJSON(url){
     return await r.json();
   }
 
-  // Si l'application tourne sur notre serveur local (port 8088),
-  // on utilise le proxy local ultra-rapide, sans aucune limite de CORS ni de taille (évite l'erreur HTTP 413) !
-  if (location.port === "8088") {
+  // Si l'application tourne sur Vercel (production en ligne) ou sur notre serveur local (port 8088),
+  // on utilise le proxy local/serverless ultra-rapide et sans limite de taille (évite l'erreur HTTP 413) !
+  if (location.hostname.endsWith(".vercel.app") || location.port === "8088") {
     const r = await fetch(`/proxy?url=${encodeURIComponent(url)}`);
     if (!r.ok) throw new Error("HTTP " + r.status);
     return await r.json();
@@ -647,26 +646,24 @@ async function fetchJSON(url){
 }
 
 /* ---------- liste complète ---------- */
+/* ---------- liste complète ---------- */
 async function loadItems(){
   statusEl.innerHTML=`<span class="spin"></span> ${t("st_loading")}`;
-  const j=await fetchJSON(API+"/items");
-  ALL=j.data
-    .filter(it=>!(it.tags||[]).includes("arcane_helmet"))   // retirer les arcane helmet
-    .filter(it=>!/\b(steam|twitch|prime gaming|pinnacle|supporter|heirloom).*pack\b|pack\)\s*$/i
-      .test(it.i18n?.en?.name||""))                         // retirer les packs promo non échangeables
-    .map(it=>{
-      const en=it.i18n?.en||{};
-      const c=cacheGet(it.slug);
-      const name=en.name||it.slug;
-      const dr=dropInfo(name);
-      return {slug:it.slug,name,thumb:en.thumb?CDN+en.thumb:"", isSet:it.slug.endsWith("_set"),
-              tags:it.tags||[], plat:c?c.plat:null, online:c?c.online:0,
-              smin:c?c.smin:null, smax:c?c.smax:null, svol:c?c.svol:null, slast:c?c.slast:null,
-              orders:c&&c.orders!=null?c.orders:null, scanned:!!c,
-              vaulted:vaultStatus(name), tradable:tradableStatus(name),
-              drop:dr, relicRewards:relicContents(name),
-              droppable:!!dr, err:null, loading:false};
-    }).sort((a,b)=>a.name.localeCompare(b.name));
+  const res=await fetch("items.json");
+  if(!res.ok) throw new Error("Impossible de charger la liste des items.");
+  const data=await res.json();
+  ALL=data.map(it=>{
+    const c=cacheGet(it.slug);
+    return {
+      slug:it.slug, name:it.name, thumb:it.thumb?CDN+it.thumb:"", isSet:it.slug.endsWith("_set"),
+      tags:it.tags||[], plat:c?c.plat:null, online:c?c.online:0,
+      smin:c?c.smin:null, smax:c?c.smax:null, svol:c?c.svol:null, slast:c?c.slast:null,
+      orders:c&&c.orders!=null?c.orders:null, scanned:!!c,
+      vaulted:vaultStatus(it.name), tradable:tradableStatus(it.name),
+      drop:dropInfo(it.name), relicRewards:relicContents(it.name),
+      droppable:!!dropInfo(it.name), err:null, loading:false
+    };
+  }).sort((a,b)=>a.name.localeCompare(b.name));
   totEl.textContent=ALL.length;
   statusEl.textContent=t("st_loaded");
 }
