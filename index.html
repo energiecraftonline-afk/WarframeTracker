@@ -2660,13 +2660,25 @@ let bulkLoaded=false;
 async function loadBulkPrices(){
   const dates=[];
   for(let i=1;i<=5;i++){ dates.push(new Date(Date.now()-i*86400000).toISOString().slice(0,10)); }
-  // déjà téléchargé pour cette date ? les prix sont déjà en cache -> on évite les 4 Mo
-  try{ if(localStorage.getItem("wf_bulk_date")===dates[0]) return false; }catch{}
-  let dump=null, used=null;
-  for(const date of dates){
-    try{ const d=await fetchJSON(`https://relics.run/history/price_history_${date}.json`);
-      if(d && Object.keys(d).length){ dump=d; used=date; break; } }
-    catch(e){ /* date suivante */ }
+  let dump=null, used=null, fromPc=false;
+  // 0. Dump des prix depuis le PC (MariaDB) : TOUS les prix frais en 1 requête.
+  //    Rechargé à chaque ouverture (données à jour, mises à jour par le trafic).
+  try{
+    const pcBase=await discoverPcApi();
+    if(pcBase){
+      const root=pcBase.replace(/\/proxy\/?$/,"");
+      const r=await fetch(`${root}/api/db/prices-dump`,{cache:"no-store"});
+      if(r.ok){ const j=await r.json(); if(j && Object.keys(j).length){ dump=j; used="pc:"+dates[0]; fromPc=true; } }
+    }
+  }catch(e){ /* PC indisponible : on tentera relics.run */ }
+  // 1. Repli : dump historique relics.run (avec garde journalière pour éviter 4 Mo/jour)
+  if(!dump){
+    try{ if(localStorage.getItem("wf_bulk_date")===dates[0]) return false; }catch{}
+    for(const date of dates){
+      try{ const d=await fetchJSON(`https://relics.run/history/price_history_${date}.json`);
+        if(d && Object.keys(d).length){ dump=d; used=date; break; } }
+      catch(e){ /* date suivante */ }
+    }
   }
   if(!dump) return false;
   const byName={}; for(const it of ALL) byName[it.name]=it;
@@ -2686,7 +2698,8 @@ async function loadBulkPrices(){
     n++;
   }
   bulkLoaded=n>0;
-  if(bulkLoaded){ try{ localStorage.setItem("wf_bulk_date", used); }catch{} saveCache(); }
+  // On ne pose la garde journalière que pour relics.run ; le dump PC se recharge à chaque fois.
+  if(bulkLoaded){ try{ if(!fromPc) localStorage.setItem("wf_bulk_date", used); }catch{} saveCache(); }
   return bulkLoaded;
 }
 // scan principal : on ne récupère QUE les ordres (le prix). Les stats sont différées (phase 2)
