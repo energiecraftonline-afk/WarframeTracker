@@ -225,8 +225,44 @@
     clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,22px 100%,0 calc(100% - 22px))}
   #detail .dhead{display:flex;gap:18px;padding:20px 22px;border-bottom:1px solid var(--border);align-items:flex-start}
   #detail .dimg{width:120px;height:120px;flex:none;display:flex;align-items:center;justify-content:center;
-    background:radial-gradient(circle at 50% 42%,#1a3a52,#091420 72%);border:1px solid var(--border)}
-  #detail .dimg img{max-width:104px;max-height:104px;object-fit:contain;filter:drop-shadow(0 6px 18px rgba(0,0,0,.6))}
+    background:radial-gradient(circle at 50% 42%,#1a3a52,#091420 72%);border:1px solid var(--border);
+    position:relative; cursor:zoom-in;}
+  #detail .dimg img{max-width:104px;max-height:104px;object-fit:contain;filter:drop-shadow(0 6px 18px rgba(0,0,0,.6));
+    transition:transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease;}
+
+  /* Zoom plein écran haute résolution au survol */
+  #image-zoom-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 8, 15, 0.85);
+    backdrop-filter: blur(6px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+  }
+  #image-zoom-overlay.on {
+    opacity: 1;
+    visibility: visible;
+  }
+  #image-zoom-overlay img {
+    width: 450px;
+    height: 450px;
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
+    filter: drop-shadow(0 20px 50px rgba(0,0,0,0.95)) drop-shadow(0 0 25px rgba(84,216,255,0.45));
+    transform: scale(0.85);
+    transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  #image-zoom-overlay.on img {
+    transform: scale(1);
+  }
+  
   #detail .dttl{flex:1;min-width:0}
   #detail h2{font-family:"Orbitron",sans-serif;font-size:20px;margin:0 0 6px;color:#fff;text-transform:uppercase;letter-spacing:.6px}
   #detail .dbadges{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
@@ -359,9 +395,441 @@
   #sound{ min-width:auto; }
   #sound.off{ color:var(--muted); border-color:var(--border); }
 
+  /* Layout principal */
+  .app-layout {
+    display: flex;
+    gap: 16px;
+    padding: 8px 24px 60px;
+    position: relative;
+    z-index: 1;
+  }
+  .app-layout main {
+    flex: 1;
+    padding: 0;
+    min-width: 0;
+  }
+  
+  /* Sidebar */
+  .sidebar {
+    width: 380px;
+    flex-shrink: 0;
+    background: linear-gradient(160deg, #0e1d2c, #091420);
+    border: 1px solid var(--border);
+    clip-path: var(--cut);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 130px);
+    position: sticky;
+    top: 80px;
+    transition: width 0.3s ease, margin 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+    will-change: transform, opacity;
+  }
+  .sidebar.collapsed {
+    width: 0;
+    margin-left: -16px;
+    border: none;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(20px);
+  }
+  
+  /* Sidebar Tabs */
+  .sb-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0, 0, 0, 0.2);
+  }
+  .sb-tab {
+    flex: 1;
+    padding: 12px 10px;
+    text-align: center;
+    font-family: "Orbitron", sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+    border-bottom: 2px solid transparent;
+  }
+  .sb-tab:hover {
+    color: var(--accent);
+    background: rgba(84, 216, 255, 0.05);
+  }
+  .sb-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    background: rgba(84, 216, 255, 0.08);
+    text-shadow: var(--glow);
+  }
+  
+  .sb-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+  .sb-pane {
+    display: none;
+  }
+  .sb-pane.active {
+    display: block;
+    animation: fadeIn 0.25s ease;
+  }
+  
+  /* Section interne */
+  .sb-sec {
+    margin-bottom: 20px;
+  }
+  .sb-sec:last-child {
+    margin-bottom: 0;
+  }
+  .sb-sec h3 {
+    font-family: "Orbitron", sans-serif;
+    font-size: 12px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin: 0 0 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(29, 51, 70, 0.6);
+  }
+  
+  /* Cycles temporels */
+  .cycle-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 13.5px;
+  }
+  .cycle-name {
+    font-weight: 600;
+    color: var(--txt);
+  }
+  .cycle-val {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .cycle-val.day { color: var(--gold); }
+  .cycle-val.night { color: var(--accent); }
+  .cycle-val.warm { color: var(--orange); }
+  .cycle-val.cold { color: var(--accent); }
+  .cycle-val.fass { color: var(--orange); }
+  .cycle-val.vome { color: var(--green); }
+  
+  /* Fissures */
+  .fissure-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 8px;
+    margin-bottom: 6px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(29, 51, 70, 0.4);
+    clip-path: var(--cut);
+    font-size: 13px;
+  }
+  .fissure-item:hover {
+    background: rgba(84, 216, 255, 0.04);
+    border-color: var(--border2);
+  }
+  .fissure-left {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .fissure-tier {
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+  .fissure-tier.Lith { color: var(--orange); }
+  .fissure-tier.Meso { color: var(--muted); }
+  .fissure-tier.Neo { color: var(--accent); }
+  .fissure-tier.Axi { color: var(--gold); }
+  .fissure-tier.Requiem { color: var(--red); }
+  
+  .fissure-node {
+    color: var(--txt);
+    font-weight: 600;
+  }
+  .fissure-type {
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .fissure-right {
+    text-align: right;
+    font-weight: 600;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--gold);
+  }
+  
+  /* Sortie */
+  .sortie-item {
+    padding: 6px 0;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(29, 51, 70, 0.3);
+  }
+  .sortie-item:last-child {
+    border-bottom: none;
+  }
+  .sortie-mttl {
+    font-weight: 700;
+    color: var(--txt);
+  }
+  .sortie-mtype {
+    color: var(--accent2);
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin: 1px 0;
+  }
+  .sortie-mod {
+    color: var(--orange);
+    font-size: 11.5px;
+    font-weight: 500;
+  }
+  
+  /* Baro */
+  .baro-status {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--txt);
+    margin-bottom: 8px;
+  }
+  .baro-item-list {
+    max-height: 180px;
+    overflow-y: auto;
+    font-size: 12px;
+    border: 1px solid rgba(29, 51, 70, 0.4);
+    background: rgba(0, 0, 0, 0.15);
+  }
+  .baro-tr {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 6px;
+    border-bottom: 1px solid rgba(29, 51, 70, 0.3);
+  }
+  .baro-tr:last-child {
+    border-bottom: none;
+  }
+  .baro-iname {
+    font-weight: 600;
+    color: var(--txt);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    margin-right: 8px;
+  }
+  .baro-icost {
+    color: var(--gold);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  
+  /* Drag & Drop Zone */
+  .drop-zone {
+    border: 2px dashed var(--border2);
+    padding: 24px 16px;
+    text-align: center;
+    background: rgba(14, 24, 37, 0.4);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    clip-path: var(--cut);
+    margin-bottom: 15px;
+  }
+  .drop-zone.hover {
+    border-color: var(--accent);
+    background: rgba(84, 216, 255, 0.08);
+    box-shadow: var(--glow);
+  }
+  .drop-zone p {
+    margin: 0 0 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .drop-zone p.main-text {
+    color: var(--txt);
+    font-family: "Orbitron", sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .drop-zone svg {
+    margin-bottom: 10px;
+    stroke: var(--muted);
+    transition: stroke 0.2s;
+  }
+  .drop-zone.hover svg {
+    stroke: var(--accent);
+    filter: drop-shadow(0 0 4px var(--accent));
+  }
+  
+  /* Infos joueur du Log */
+  .log-player {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: rgba(84, 216, 255, 0.06);
+    border: 1px solid var(--border2);
+    clip-path: var(--cut);
+    font-size: 13.5px;
+    margin-bottom: 15px;
+  }
+  .log-player-name {
+    font-weight: 700;
+    color: var(--accent);
+    text-shadow: var(--glow);
+  }
+  
+  /* Onglets de chat EE.log */
+  .log-tabs-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 15px;
+  }
+  .log-tab-chip {
+    padding: 3px 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    clip-path: var(--cut);
+    transition: all 0.12s;
+  }
+  .log-tab-chip:hover {
+    border-color: var(--accent);
+    color: var(--txt);
+  }
+  .log-tab-chip.active {
+    background: rgba(84, 216, 255, 0.15);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: var(--glow);
+  }
+  
+  /* Historique de chat */
+  .log-chat-box {
+    border: 1px solid var(--border2);
+    background: rgba(0, 0, 0, 0.2);
+    clip-path: var(--cut);
+    height: 250px;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .chat-msg {
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
+  .chat-msg-time {
+    color: var(--muted);
+    font-size: 10px;
+    margin-right: 6px;
+  }
+  .chat-msg-dir {
+    font-weight: 700;
+    margin-right: 4px;
+  }
+  .chat-msg-dir.out { color: var(--accent); }
+  .chat-msg-dir.in { color: var(--green); }
+  .chat-msg-body {
+    color: var(--txt);
+  }
+  
+  /* Bouton d'action chat */
+  .chat-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .chat-action-btn {
+    flex: 1;
+    font-size: 11px;
+    height: 28px;
+    padding: 0;
+  }
+
+  /* Responsive */
+  @media (max-width: 1200px) {
+    .app-layout {
+      flex-direction: row; /* Garder l'agencement pour la table */
+    }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 340px;
+      max-width: 85vw;
+      height: 100vh;
+      z-index: 1000;
+      margin: 0;
+      clip-path: none;
+      border-radius: 0;
+      border-top: none;
+      border-bottom: none;
+      border-right: none;
+      border-left: 1px solid var(--accent2);
+      box-shadow: -5px 0 25px rgba(0, 0, 0, 0.8), var(--glow);
+      transform: translateX(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .sidebar.collapsed {
+      transform: translateX(100%);
+      opacity: 0;
+      width: 340px;
+      margin-left: 0;
+      border: none;
+      pointer-events: none;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce){
     *{ animation:none !important; }
     button::after, select::after, tbody tr::after, .badge::after, .verdict::after{ display:none !important; }
+  }
+  
+  /* Bouton/Case à cocher Super Vente */
+  .super-sale-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gold);
+    cursor: pointer;
+    padding: 6px 11px;
+    background: rgba(255, 206, 90, 0.05);
+    border: 1px solid rgba(255, 206, 90, 0.2);
+    transition: all 0.15s ease;
+    clip-path: var(--cut);
+    height: 33px;
+    user-select: none;
+  }
+  .super-sale-label:hover {
+    background: rgba(255, 206, 90, 0.12);
+    border-color: var(--gold);
+    box-shadow: 0 0 10px rgba(255, 206, 90, 0.2);
+  }
+  .super-sale-label input {
+    cursor: pointer;
+    accent-color: var(--gold);
+    width: 14px;
+    height: 14px;
+    margin: 0;
   }
 </style>
 </head>
@@ -370,6 +838,7 @@
   <h1><span class="dot"></span> Warframe — Tracker Platine</h1>
   <div class="controls">
     <button id="filtersBtn" title="Afficher / masquer les filtres">🎚️ <span data-i18n="filters">Filtres</span></button>
+    <button id="sidebarBtn" onclick="toggleSidebar()" title="Afficher / masquer le panneau latéral">📡 <span data-i18n="sidebar">État & Logs</span></button>
     <div id="filters" class="filters">
       <input id="q" data-i18n-ph="search" placeholder="🔎 Rechercher…" autocomplete="off">
       <select id="cat" title="Catégorie">
@@ -394,6 +863,10 @@
         <option value="show" data-i18n="sets_show">Sets inclus</option>
         <option value="only" data-i18n="sets_only">Sets seulement</option>
       </select>
+      <label class="super-sale-label" title="Afficher uniquement les opportunités d'arbitrage et les prix au plus bas historique">
+        <input type="checkbox" id="superSale">
+        <span data-i18n="super_sale">🔥 Super Vente</span>
+      </label>
     </div>
     <select id="lang" title="Langue de l'interface / Interface language">
       <option value="fr">🌐 FR</option>
@@ -417,25 +890,116 @@
 </div>
 <div class="bar"><i id="prog"></i></div>
 
-<main>
-  <table id="tbl">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th data-k="name"><span data-i18n="col_item">Item</span> <span class="arrow"></span></th>
-        <th data-k="plat" class="num"><span data-i18n="col_plat">Platine</span> <span class="arrow">▼</span></th>
-        <th data-k="slast" class="num" title="Prix de la dernière vente conclue"><span data-i18n="col_last">Dern. vente</span> <span class="arrow"></span></th>
-        <th data-k="smax" class="num" title="Fourchette des ventes 48 h (min–max)"><span data-i18n="col_sold">Vendu 48h</span> <span class="arrow"></span></th>
-        <th title="Sets : set vs total des pièces. Reliques : prix vs meilleur loot."><span data-i18n="col_deal">Affaire</span></th>
-        <th data-k="sales" class="num" title="Ventes détectées en direct depuis l'ouverture"><span data-i18n="col_sales">Ventes</span> <span class="arrow"></span></th>
-        <th title="Message privé in-game au vendeur le moins cher"><span data-i18n="col_mp">MP</span></th>
-        <th title="Notifications de prix"><span data-i18n="col_alert">Alerte</span></th>
-      </tr>
-    </thead>
-    <tbody id="rows"></tbody>
-  </table>
-  <div id="top"></div>
-</main>
+<div class="app-layout">
+  <main>
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th data-k="name"><span data-i18n="col_item">Item</span> <span class="arrow"></span></th>
+          <th data-k="plat" class="num"><span data-i18n="col_plat">Platine</span> <span class="arrow">▼</span></th>
+          <th data-k="slast" class="num" title="Prix de la dernière vente conclue"><span data-i18n="col_last">Dern. vente</span> <span class="arrow"></span></th>
+          <th data-k="smax" class="num" title="Fourchette des ventes 48 h (min–max)"><span data-i18n="col_sold">Vendu 48h</span> <span class="arrow"></span></th>
+          <th title="Sets : set vs total des pièces. Reliques : prix vs meilleur loot."><span data-i18n="col_deal">Affaire</span></th>
+          <th data-k="sales" class="num" title="Ventes détectées en direct depuis l'ouverture"><span data-i18n="col_sales">Ventes</span> <span class="arrow"></span></th>
+          <th title="Message privé in-game au vendeur le moins cher"><span data-i18n="col_mp">MP</span></th>
+          <th title="Notifications de prix"><span data-i18n="col_alert">Alerte</span></th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div id="top"></div>
+  </main>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sb-tabs">
+      <div id="sbTabWorld" class="sb-tab active" onclick="switchSbTab('world')">État du Monde</div>
+      <div id="sbTabLog" class="sb-tab" onclick="switchSbTab('log')">Analyseur EE.log</div>
+    </div>
+    <div class="sb-content">
+      <!-- Panneau 1 : État du Monde -->
+      <div id="sbPaneWorld" class="sb-pane active">
+        <!-- Cycles -->
+        <div class="sb-sec">
+          <h3>🕒 Cycles Temporels</h3>
+          <div id="cycleCetus" class="cycle-item">
+            <span class="cycle-name">Cetus (Plaines)</span>
+            <span class="cycle-val">—</span>
+          </div>
+          <div id="cycleVallis" class="cycle-item">
+            <span class="cycle-name">Vallée de l'Orbe</span>
+            <span class="cycle-val">—</span>
+          </div>
+          <div id="cycleDeimos" class="cycle-item">
+            <span class="cycle-name">Puits de Cambion</span>
+            <span class="cycle-val">—</span>
+          </div>
+        </div>
+        
+        <!-- Baro -->
+        <div class="sb-sec" id="secBaro">
+          <h3>🛒 Baro Ki'Teer</h3>
+          <div id="baroStatus" class="baro-status">Chargement...</div>
+          <div id="baroItems" class="baro-item-list" style="display:none;"></div>
+        </div>
+
+        <!-- Sortie -->
+        <div class="sb-sec" id="secSortie">
+          <h3>⚔️ Sortie du Jour</h3>
+          <div id="sortieFaction" style="font-weight:700; font-size:13px; margin-bottom:6px; color:var(--accent);">—</div>
+          <div id="sortieMissions"></div>
+        </div>
+
+        <!-- Fissures -->
+        <div class="sb-sec">
+          <h3>🌀 Fissures du Néant</h3>
+          <div id="fissureList">
+            <div style="color:var(--muted); font-size:13px;">Chargement...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panneau 2 : Lecteur de Log -->
+      <div id="sbPaneLog" class="sb-pane">
+        <div class="sb-sec">
+          <h3>file:///EE.log</h3>
+          <div id="dropZone" class="drop-zone" onclick="$('#fileInput').click()">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            <p class="main-text">Glisser & Déposer EE.log</p>
+            <p style="font-size:11px; margin:0;">ou cliquez pour sélectionner</p>
+            <input type="file" id="fileInput" accept=".log" style="display:none;">
+          </div>
+          
+          <div id="logPlayerInfo" class="log-player" style="display:none;">
+            <span>Profil : <span id="logPlayerName" class="log-player-name">—</span></span>
+            <button id="btnReloadLog" class="alrt" style="margin: 0; padding: 2px 8px; font-size: 11px;" title="Recharger le log en temps réel">↻ Rafraîchir</button>
+          </div>
+
+          <div id="logTabsSec" class="sb-sec" style="display:none;">
+            <h3>💬 Conversations actives</h3>
+            <div id="logTabsList" class="log-tabs-list"></div>
+          </div>
+
+          <div id="logChatSec" class="sb-sec" style="display:none;">
+            <h3>💬 Chuchotements (<span id="chatPartnerName">—</span>)</h3>
+            <div id="logChatBox" class="log-chat-box"></div>
+            <div class="chat-actions">
+              <button id="btnCopyInGame" class="chat-action-btn" title="Copier le pseudonyme pour chuchoter en jeu">👤 Copier Pseudo</button>
+              <button id="btnCopyLastMsg" class="chat-action-btn" title="Copier le dernier message reçu">📋 Copier Msg</button>
+            </div>
+          </div>
+          
+          <div id="logEmpty" style="color:var(--muted); font-size:13px; text-align:center; padding:20px 0;">
+            Déposez votre fichier <code>EE.log</code> situé dans <code>%LOCALAPPDATA%/Warframe/EE.log</code> pour analyser vos conversations en temps réel.
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- Overlay global de zoom d'image haute résolution (évite les rognages de clip-path) -->
+<div id="image-zoom-overlay"><img id="image-zoom-img" src="" alt=""></div>
 
 <footer data-i18n="footer">
   Plateformes fusionnées (crossplay). Liste complète des items échangeables via l'API publique warframe.market.
@@ -443,7 +1007,7 @@
 </footer>
 
 <!-- Charger la base de données statique d'items pour éviter le blocage CORS en local (file://) -->
-<script src="items.js"></script>
+<script src="items.js?v=3"></script>
 <script>
 const API="https://api.warframe.market/v2";
 const CDN="https://warframe.market/static/assets/";
@@ -478,23 +1042,25 @@ const T={
     vault_all:"Vaulted : tous", vault_hide:"Masquer vaulted", vault_only:"Vaulted seulement",
     mkt_sellers:"Avec vendeur en ligne", mkt_all:"Tous (même sans ordre)",
     sets_hide:"Sets : masqués", sets_show:"Sets inclus", sets_only:"Sets seulement", rescan:"↻ Re-scan",
-    export_db:"💾 Exporter", filters:"Filtres",
+    export_db:"💾 Exporter", filters:"Filtres", sidebar:"État & Logs",
     col_item:"Item", col_plat:"Platine", col_last:"Dern. vente", col_sold:"Vendu 48h",
     col_deal:"Affaire", col_sales:"Ventes", col_mp:"MP", col_alert:"Alerte", status_lbl:"Statut",
     footer:"Plateformes fusionnées (crossplay). Liste complète des items échangeables via l'API publique warframe.market. Prix live (vendeurs connectés). Non affilié à Digital Extremes. Vérifie toujours avant d'échanger.",
     st_start:"démarrage…", st_loading:"chargement de la liste…", st_loaded:"liste chargée ✓",
-    st_uptodate:"à jour ✓", st_fetching:"récupération des prix…", st_fail:"Échec chargement", st_bulk:"chargement des prix en masse…" },
+    st_uptodate:"à jour ✓", st_fetching:"récupération des prix…", st_fail:"Échec chargement", st_bulk:"chargement des prix en masse…",
+    super_sale:"🔥 Super Vente" },
   en:{ search:"🔎 Search…", cat_all:"All categories", cat_prime:"Prime", cat_mod:"Mods",
     cat_arcane:"Arcanes", cat_relic:"Relics", cat_weapon:"Weapons",
     vault_all:"Vaulted: all", vault_hide:"Hide vaulted", vault_only:"Vaulted only",
     mkt_sellers:"With online seller", mkt_all:"All (even no order)",
     sets_hide:"Sets: hidden", sets_show:"Sets included", sets_only:"Sets only", rescan:"↻ Re-scan",
-    export_db:"💾 Export", filters:"Filters",
+    export_db:"💾 Export", filters:"Filters", sidebar:"Status & Logs",
     col_item:"Item", col_plat:"Platinum", col_last:"Last sale", col_sold:"Sold 48h",
     col_deal:"Deal", col_sales:"Sales", col_mp:"PM", col_alert:"Alert", status_lbl:"Status",
     footer:"Merged platforms (crossplay). Full list of tradable items via the public warframe.market API. Live prices (connected sellers). Not affiliated with Digital Extremes. Always verify before trading.",
     st_start:"starting…", st_loading:"loading the list…", st_loaded:"list loaded ✓",
-    st_uptodate:"up to date ✓", st_fetching:"fetching prices…", st_fail:"Load failed", st_bulk:"bulk-loading prices…" }
+    st_uptodate:"up to date ✓", st_fetching:"fetching prices…", st_fail:"Load failed", st_bulk:"bulk-loading prices…",
+    super_sale:"🔥 Super Sale" }
 };
 let curLang=(prefs.lang==="en")?"en":"fr";
 function t(k){ return (T[curLang]||T.fr)[k]||k; }
@@ -546,6 +1112,7 @@ function savePrefs(){
   prefs.q=$("#q").value; prefs.cat=$("#cat").value;
   prefs.vault=$("#vault").value;
   prefs.market=$("#market").value; prefs.sets=$("#sets").value; prefs.lang=$("#lang").value;
+  prefs.superSale=$("#superSale").checked ? 1 : 0;
   prefs.sortKey=sortKey; prefs.sortDir=sortDir;
   try{localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));}catch{}
 }
@@ -743,25 +1310,32 @@ async function poolFetch(url){
 }
 
 async function fetchJSON(url){
-  // Hôtes sans CORS navigateur (warframe.market, relics.run) -> via proxy. Sinon appel direct.
-  const proxied = url.includes("warframe.market") || url.includes("relics.run");
+  // Si la page est exécutée en local (file://), le navigateur bloque les requêtes directes (CORS).
+  // On doit donc tout faire passer par le proxy CORS dans ce cas.
+  const proxied = url.includes("warframe.market") || url.includes("relics.run") || location.protocol === "file:";
   if(!proxied){
     const r = await fetch(url, { headers: { Accept: "application/json" } });
     if(!r.ok) throw new Error("HTTP " + r.status);
     return await r.json();
   }
-  // Proxy dédié configuré (Cloudflare / Vercel / serveur local 8088) : rapide, sans limite de taille
+  // 1. Si un worker Cloudflare dédié est configuré
   if(typeof CLOUDFLARE_WORKER_URL !== "undefined" && CLOUDFLARE_WORKER_URL){
     const r = await fetch(`${CLOUDFLARE_WORKER_URL}?url=${encodeURIComponent(url)}`);
     if(!r.ok) throw new Error("HTTP " + r.status);
     return await r.json();
   }
-  if(location.hostname.endsWith(".vercel.app") || location.port === "8088"){
-    const r = await fetch(`/proxy?url=${encodeURIComponent(url)}`);
-    if(!r.ok) throw new Error("HTTP " + r.status);
-    return await r.json();
+  // 2. Si on est sur un serveur web (HTTP/HTTPS), on essaie d'utiliser notre proxy local/Vercel (/proxy)
+  if(location.protocol.startsWith("http")){
+    try {
+      const r = await fetch(`/proxy?url=${encodeURIComponent(url)}`);
+      if(r.ok) {
+        return await r.json();
+      }
+    } catch(e) {
+      // En cas d'erreur de connexion au proxy local, on passera au pool de proxies publics
+    }
   }
-  // Sinon : pool de proxies publics réparti sur plusieurs IPs
+  // 3. Sinon : pool de proxies publics réparti sur plusieurs IPs
   return poolFetch(url);
 }
 
@@ -888,6 +1462,7 @@ function buildView(){
   const vf=$("#vault").value;
   const mf=$("#market").value;
   const sets=$("#sets").value;
+  const superSale=$("#superSale").checked;
   VIEW=ALL.filter(d=>{
     if(d.tradable===false) return false;             // retirer les items non échangeables entre joueurs
     if(sets==="hide" && d.isSet) return false;       // sets masqués par défaut
@@ -896,16 +1471,20 @@ function buildView(){
     if(cat && !d.tags.includes(cat)) return false;
     if(vf==="hide" && d.vaulted===true) return false;
     if(vf==="only" && d.vaulted!==true) return false;
+    
     // masquer les items dont le prix dépasse la vente 48h (sur-cotés)
     if(d.plat!=null && d.smax!=null && d.plat>d.smax) return false;
-    // filtre « farmable hors achat PL » : appliqué seulement quand les sources sont chargées
-    // (sinon on masquerait tout). Reliques (missions) et sets (craft) exemptés.
-    if(sourceMap){
-      if(d.isSet){ if(!d.setFarmable) return false; }
-      else if(!isRelicItem(d) && !hasSource(d)) return false;
+    
+    // Mode Super Vente : uniquement prix au plus bas historique ou très rentable
+    if(superSale){
+      if(d.plat==null) return false;
+      const isLow = d.smin!=null && d.plat<=d.smin;
+      const isHot = isHotRow(d)===true;
+      if(!isLow && !isHot) return false;
     }
-    // masquer les liens morts : item scanné sans aucun vendeur en ligne
-    if(mf==="sellers" && d.scanned && d.plat==null) return false;
+    
+    // masquer les liens morts : item scanné sans aucun vendeur en ligne (sauf s'il y a une erreur ou un 404 pour que l'utilisateur le voie)
+    if(mf==="sellers" && d.scanned && d.plat==null && !d.err) return false;
     return true;
   });
 }
@@ -935,7 +1514,10 @@ function tagHtml(tags){
   }).join("");
 }
 function priceCell(d){
-  if(d.err) return `<span class="err" data-slug="${d.slug}" title="réessayer">⟳ erreur</span>`;
+  if(d.err){
+    if(d.err==="404") return `<span class="err" data-slug="${d.slug}" style="color:var(--muted);" title="Aucun ordre trouvé sur warframe.market pour cet objet (404). Cliquez pour réessayer.">📭 Aucun ordre</span>`;
+    return `<span class="err" data-slug="${d.slug}" title="réessayer">⟳ erreur</span>`;
+  }
   if(d.plat!=null){
     const tr=d.trend==="up"?`<span class="trend up" title="le prix monte">▲</span>`
             :d.trend==="down"?`<span class="trend down" title="le prix baisse">▼</span>`:"";
@@ -943,19 +1525,15 @@ function priceCell(d){
     if(d.perTrade && d.perTrade > 1){
       if(isRelicItem(d)){
         const relicIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-left:4px;"><path d="M12 2C8 2 5 6 5 11c0 5 3 11 7 11s7-6 7-11c0-5-3-11-7-11z"></path><path d="M5 11h14M12 2v20"></path></svg>`;
-        const platIcon = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" style="vertical-align:-1px; margin: 0 2px;"><circle cx="12" cy="12" r="10"></circle><path d="M10 8h4a3 3 0 0 1 0 6h-4v4" stroke-linecap="round" stroke-linejoin="round"></path></svg>`;
+        // prix d'UNE relique (unitaire = total ÷ lot), pas le prix du lot de ${d.perTrade}
         return `
           <div style="display:flex; flex-direction:column; align-items:flex-end; line-height:1.2;">
             <div style="display:flex; align-items:center;">
               ${tr}
-              <span class="plat" style="color:var(--red); text-shadow:0 0 8px rgba(255,93,108,.3); font-size:15px;">${d.plat}</span>
+              <span class="plat" style="font-size:15px;" title="prix pour 1 relique">${d.plat} PL</span>
               ${relicIcon}
             </div>
-            <div style="color:var(--muted); font-size:11px; margin-top:2px; font-weight:600; display:flex; align-items:center;">
-              <span>${d.rawPrice}</span>
-              ${platIcon}
-              <span>/ trade</span>
-            </div>
+            <div style="color:var(--muted); font-size:11px; margin-top:2px; font-weight:600;" title="le vendeur impose un lot minimum">min. ${d.perTrade}/trade</div>
           </div>
         `;
       } else {
@@ -1009,6 +1587,16 @@ function dealCell(d){
     const gain=-diff, hot=hotGain(gain,d.plat);
     return `<span class="verdict save${hot?" hot":""}" title="meilleur loot ${d.relicBest} PL > relique ${d.plat} PL — gain potentiel">${hot?"🔥 ":"💰 "}jusqu'à +${gain} PL</span>`;
   }
+  // Arbitrage / Achat-Revente pour items classiques
+  if(!d.isSet && !isRelicItem(d) && d.plat!=null && d.slast!=null){
+    const diff=d.slast-d.plat;
+    if(diff>0){
+      const hot=hotGain(diff,d.plat);
+      return `<span class="verdict save${hot?" hot":""}" title="Dernière vente conclue (${d.slast} PL) > Prix actuel (${d.plat} PL) — opportunité d\'arbitrage achat-revente">${hot?"🔥 ":"💰 "}+${diff} PL</span>`;
+    } else if(diff<0){
+      return `<span class="verdict warn" title="Le prix actuel (${d.plat} PL) est supérieur à la dernière vente conclue (${d.slast} PL)">⚠️ +${-diff} PL</span>`;
+    }
+  }
   return `<span style="color:var(--muted)">—</span>`;
 }
 // "très rentable" pour la mise en évidence de la ligne entière
@@ -1016,6 +1604,7 @@ function isHotRow(d){
   if(d.plat==null) return false;
   if(d.isSet && d.setTotal!=null){ const g=d.setTotal-d.plat; return g>0 && hotGain(g,d.setTotal); }
   if(isRelicItem(d) && d.relicBest!=null){ const g=d.relicBest-d.plat; return g>0 && hotGain(g,d.plat); }
+  if(!d.isSet && !isRelicItem(d) && d.slast!=null){ const g=d.slast-d.plat; return g>0 && hotGain(g,d.plat); }
   return false;
 }
 // calcul lazy : prix du loot le plus cher d'une relique
@@ -1102,17 +1691,17 @@ function copyWhisper(seller,item,price,btn){
 // colonne dédiée : MP in-game au vendeur le moins cher
 function mpCell(d){
   if(d.plat!=null)
-    return `<td class="mpcell"><button class="mp" data-slug="${d.slug}" title="${d.lowSeller?`Copier le /w pour ${d.lowSeller} (${d.plat} PL)`:'Copier le message d\'achat in-game (récupère le vendeur le moins cher)'}">💬 MP</button></td>`;
+    return `<td class="mpcell"><button class="mp" data-slug="${d.slug}" title="${d.lowSeller?`Copier le /w pour ${d.lowSeller} (${d.rawPrice || d.plat} PL)`:'Copier le message d\'achat in-game (récupère le vendeur le moins cher)'}">💬 MP</button></td>`;
   return `<td class="mpcell"><span style="color:var(--muted)">—</span></td>`;
 }
 // copie le /w ; si le vendeur n'est pas encore connu (prix approx du dump), on le récupère à la demande
 async function mpAction(d, btn, price){
-  const p = price!=null ? price : d.plat;
+  const p = price!=null ? price : (d.rawPrice || d.plat);
   if(d.lowSeller){ copyWhisper(d.lowSeller, d.name, p, btn); return; }
   const old=btn.dataset.lbl||btn.textContent; btn.dataset.lbl=old; btn.textContent="⏳";
   try{ const j=await fetchJSON(`${API}/orders/item/${d.slug}`); computePrice(d,j.data||[]); patchRow(d); }catch(e){}
   btn.textContent=old; btn.classList.remove("ok");
-  if(d.lowSeller) copyWhisper(d.lowSeller, d.name, d.plat, btn);
+  if(d.lowSeller) copyWhisper(d.lowSeller, d.name, d.rawPrice || d.plat, btn);
   else flashBtn(btn,"aucun vendeur");
 }
 // "hi" si prix actuel >= max vendu, "lo" si <= min vendu, sinon ""
@@ -1228,7 +1817,7 @@ function computePrice(d,orders){
   if(!sells.length){ d.plat=null; d.online=0; d.lowSeller=null; d.perTrade=1; d.rawPrice=null; }
   else{
     const o=sells[0];
-    d.perTrade=o.per_trade||1;
+    d.perTrade=o.perTrade||o.per_trade||1;
     d.rawPrice=o.platinum;
     d.lowSeller=o.user.ingameName;
     d.online=sells.length;
@@ -1319,7 +1908,13 @@ async function fetchPrice(d){
     const j=await fetchJSON(`${API}/orders/item/${d.slug}`);
     computePrice(d,j.data||[]);
     d.err=null;
-  }catch(e){ d.err="erreur"; }
+  }catch(e){
+    if(e && e.message && e.message.includes("404")){
+      d.err="404";
+    } else {
+      d.err="erreur";
+    }
+  }
   d.loading=false;
 }
 
@@ -1416,8 +2011,30 @@ async function watchOne(d){
     if(gone) d.sales=(d.sales||0)+gone;
   }
   d._ids=ids;
+  
+  // Notification live : l'item était offline (scanné sans vendeur) et devient disponible à très bas prix
+  const wasOffline = (d.scanned && d.plat === null);
   const oldPlat=d._plat!=null?d._plat:null;
+  
   computePrice(d,orders);
+  
+  if(wasOffline && d.plat!=null){
+    const isLow = d.smin!=null && d.plat<=d.smin;
+    const isHot = isHotRow(d)===true;
+    if(isLow || isHot){
+      // Alerte sonore et système
+      sfxSuperSale();
+      if("Notification" in window && Notification.permission==="granted"){
+        try {
+          const title = `🔥 SUPER VENTE — ${d.name}`;
+          const body = `Nouveau vendeur en ligne ! Prix : ${d.plat} PL (Min 48h : ${d.smin || "—"} PL, Dern. vente : ${d.slast || "—"} PL).`;
+          new Notification(title, { body });
+        } catch(e) {}
+      }
+      statusEl.innerHTML = `<span class="badge" style="background:linear-gradient(180deg,rgba(255,206,90,0.25),rgba(255,206,90,0.08)); color:var(--gold); border-color:var(--gold); animation:hotPulse 1.5s ease-in-out infinite;">🔥 Alerte Super Vente : ${d.name} à ${d.plat} PL !</span>`;
+    }
+  }
+  
   // flash dans la liste si le prix le plus bas a bougé depuis le dernier poll
   let flash=null;
   if(oldPlat!=null && d.plat!=null && d.plat!==oldPlat) flash=d.plat<oldPlat?"down":"up";
@@ -1457,6 +2074,7 @@ $("#cat").addEventListener("change",applyFilter);
 $("#vault").addEventListener("change",applyFilter);
 $("#market").addEventListener("change",applyFilter);
 $("#sets").addEventListener("change",applyFilter);
+$("#superSale").addEventListener("change",applyFilter);
 $("#lang").addEventListener("change",()=>{ applyLang($("#lang").value); savePrefs(); });
 $("#refresh").addEventListener("click",()=>startScan(true));
 $("#export-db").addEventListener("click",exportDatabase);
@@ -1495,7 +2113,10 @@ function buildPreview(d){
     : `<span style="color:var(--muted)">—</span>`;
   let price;
   if(d.plat!=null) price=`<span class="big">${d.plat}</span><span class="u">PL</span>`;
-  else if(d.err)   price=`<span class="u" style="color:var(--red)">⟳ erreur de prix</span>`;
+  else if(d.err) {
+    if(d.err==="404") price=`<span class="u" style="color:var(--muted)">📭 aucun ordre sur le marché</span>`;
+    else price=`<span class="u" style="color:var(--red)">⟳ erreur de prix</span>`;
+  }
   else if(d.scanned) price=`<span class="u">aucun vendeur en ligne</span>`;
   else             price=`<span class="u"><span class="spin"></span> prix en cours…</span>`;
   const vault=d.vaulted===true?`<span style="color:var(--red)">🔒 Vaulted</span>`:
@@ -1571,6 +2192,42 @@ rowsEl.addEventListener("mousemove",e=>{
   positionPreview(e.clientX,e.clientY);
 });
 rowsEl.addEventListener("mouseleave",hidePreview);
+
+// Zoom d'image global en haute résolution au survol de la miniature du détail
+document.addEventListener("mouseover", e => {
+  const dimg = e.target.closest("#detail .dimg");
+  if (dimg) {
+    const img = dimg.querySelector("img");
+    if (img && img.src) {
+      const zoomOverlay = document.getElementById("image-zoom-overlay");
+      const zoomImg = document.getElementById("image-zoom-img");
+      if (zoomOverlay && zoomImg) {
+        // Affiche immédiatement la miniature pour la fluidité
+        zoomImg.src = img.src;
+        zoomOverlay.classList.add("on");
+        
+        // Convertit l'URL en version haute résolution et la précharge
+        const highRes = img.src.replace(/\/thumbs\//i, "/").replace(/\.\d+x\d+\./i, ".");
+        const loader = new Image();
+        loader.onload = () => {
+          if (zoomImg.src === img.src) {
+            zoomImg.src = highRes;
+          }
+        };
+        loader.src = highRes;
+      }
+    }
+  }
+});
+document.addEventListener("mouseout", e => {
+  const dimg = e.target.closest("#detail .dimg");
+  if (dimg) {
+    const zoomOverlay = document.getElementById("image-zoom-overlay");
+    if (zoomOverlay) {
+      zoomOverlay.classList.remove("on");
+    }
+  }
+});
 
 /* ---------- fiche détaillée (planètes, missions, rotations, %, mobs) ---------- */
 const detailEl=$("#detail"), dboxEl=$("#dbox");
@@ -1865,7 +2522,14 @@ function restorePrefs(){
   if(prefs.market!=null)$("#market").value=prefs.market;
   if(prefs.sets!=null)$("#sets").value=prefs.sets;
   if(prefs.lang!=null)$("#lang").value=prefs.lang;
+  if(prefs.superSale!=null)$("#superSale").checked = prefs.superSale === 1;
   if(prefs.filtersOpen){ $("#filters").classList.add("on"); $("#filtersBtn").classList.add("on"); }
+  
+  // Restauration de l'état du panneau latéral
+  const sidebarOpen = prefs.sidebarOpen !== undefined ? prefs.sidebarOpen : 1;
+  $("#sidebar").classList.toggle("collapsed", sidebarOpen === 0);
+  $("#sidebarBtn").classList.toggle("on", sidebarOpen === 1);
+  
   applyLang(curLang);
   sortKey=prefs.sortKey||"plat";
   sortDir=prefs.sortDir!=null?prefs.sortDir:-1;
@@ -1894,6 +2558,7 @@ const sfxClick=()=>{ blip(660,0.07,"triangle",0.05,990); };
 const sfxToggle=on=>{ blip(on?520:300,0.12, "sine",0.06, on?880:200); };
 const sfxOpen =()=>{ blip(420,0.16,"sine",0.05,840); };
 const sfxAlert=()=>{ blip(880,0.09,"square",0.04,1320); };
+const sfxSuperSale=()=>{ sfxInit(); blip(620,0.10,"sine",0.08,920); setTimeout(()=>blip(820,0.15,"sine",0.08,1220),110); };
 function setSound(on){ SFX.on=on; const b=$("#sound"); if(b){ b.textContent=on?"🔊":"🔇"; b.classList.toggle("off",!on); }
   prefs.sound=on?"on":"off"; try{localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));}catch{} }
 // premier geste -> débloque l'audio
@@ -1909,8 +2574,387 @@ document.addEventListener("click",e=>{
   if(el.closest("button, th[data-k], .relicrow, .mp")) sfxClick();
 });
 
+/* ---------- LOGIQUE DU PANNEAU LATÉRAL & LECTEUR EE.LOG ---------- */
+function toggleSidebar() {
+  const sidebar = $("#sidebar");
+  const btn = $("#sidebarBtn");
+  const collapsed = sidebar.classList.toggle("collapsed");
+  btn.classList.toggle("on", !collapsed);
+  prefs.sidebarOpen = collapsed ? 0 : 1;
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch(e) {}
+  if (typeof sfxToggle === "function") sfxToggle(!collapsed);
+}
+
+function switchSbTab(tab) {
+  $("#sbTabWorld").classList.toggle("active", tab === 'world');
+  $("#sbTabLog").classList.toggle("active", tab === 'log');
+  $("#sbPaneWorld").classList.toggle("active", tab === 'world');
+  $("#sbPaneLog").classList.toggle("active", tab === 'log');
+  if (typeof sfxClick === "function") sfxClick();
+}
+
+/* --- API WORLDSTATE --- */
+function updateWorldstateUI(data) {
+  if (!data) return;
+
+  // Cetus Cycle
+  const cetus = data.cetusCycle;
+  if (cetus) {
+    const isDay = cetus.isDay;
+    const time = cetus.timeLeft ? cetus.timeLeft.replace(/\s*\d+s$/, '') : '';
+    const state = isDay ? `<span class="cycle-val day">☀️ Jour (${time})</span>` : `<span class="cycle-val night">🌙 Nuit (${time})</span>`;
+    $("#cycleCetus").innerHTML = `<span class="cycle-name">Cetus (Plaines)</span>${state}`;
+  }
+
+  // Vallis Cycle
+  const vallis = data.vallisCycle;
+  if (vallis) {
+    const isWarm = vallis.isWarm;
+    const time = vallis.timeLeft ? vallis.timeLeft.replace(/\s*\d+s$/, '') : '';
+    const state = isWarm ? `<span class="cycle-val warm">🔥 Chaud (${time})</span>` : `<span class="cycle-val cold">❄️ Froid (${time})</span>`;
+    $("#cycleVallis").innerHTML = `<span class="cycle-name">Vallée de l'Orbe</span>${state}`;
+  }
+
+  // Cambion Cycle
+  const cambion = data.cambionCycle;
+  if (cambion) {
+    const active = cambion.active;
+    const time = cambion.timeLeft ? cambion.timeLeft.replace(/\s*\d+s$/, '') : '';
+    const state = active === 'vome' ? `<span class="cycle-val vome">🔵 Vome (${time})</span>` : `<span class="cycle-val fass">🟠 Fass (${time})</span>`;
+    $("#cycleDeimos").innerHTML = `<span class="cycle-name">Puits de Cambion</span>${state}`;
+  }
+
+  // Sortie
+  const sortie = data.sortie;
+  if (sortie && sortie.variants && sortie.variants.length) {
+    $("#secSortie").style.display = "block";
+    $("#sortieFaction").textContent = `${sortie.faction} — Boss : ${sortie.boss || 'Inconnu'}`;
+    const missions = sortie.variants.map((v, i) => `
+      <div class="sortie-item">
+        <div class="sortie-mttl">Mission ${i+1} : ${v.node}</div>
+        <div class="sortie-mtype">${v.missionType}</div>
+        <div class="sortie-mod" title="${v.modifierDescription || ''}">⚠️ ${v.modifier}</div>
+      </div>
+    `).join("");
+    $("#sortieMissions").innerHTML = missions;
+  } else {
+    $("#secSortie").style.display = "none";
+  }
+
+  // Baro Ki'Teer
+  const baro = data.voidTrader;
+  if (baro) {
+    const active = baro.active;
+    const time = baro.timeLeft ? baro.timeLeft.replace(/\s*\d+s$/, '') : '';
+    if (active) {
+      $("#baroStatus").innerHTML = `<span style="color:var(--green)">🟢 Présent à ${baro.location}</span><br><span style="font-size:12px; color:var(--muted)">Départ dans ${time}</span>`;
+      if (baro.inventory && baro.inventory.length) {
+        $("#baroItems").style.display = "block";
+        const table = baro.inventory.map(item => `
+          <div class="baro-tr">
+            <span class="baro-iname" title="${item.item}">${item.item}</span>
+            <span class="baro-icost">${item.ducats}d / ${Math.round(item.credits/1000)}k c</span>
+          </div>
+        `).join("");
+        $("#baroItems").innerHTML = table;
+      } else {
+        $("#baroItems").style.display = "none";
+      }
+    } else {
+      $("#baroStatus").innerHTML = `<span style="color:var(--muted)">⏳ Arrive dans ${time}</span>`;
+      $("#baroItems").style.display = "none";
+    }
+  }
+
+  // Fissures
+  let fissures = data.fissures || [];
+  if (fissures.length) {
+    const tierOrder = { 'Lith': 1, 'Meso': 2, 'Neo': 3, 'Axi': 4, 'Requiem': 5 };
+    fissures = fissures
+      .filter(f => !f.expired)
+      .sort((a, b) => {
+        const ta = tierOrder[a.tier] || 99;
+        const tb = tierOrder[b.tier] || 99;
+        if (ta !== tb) return ta - tb;
+        return (a.expiry || '').localeCompare(b.expiry || '');
+      })
+      .slice(0, 8);
+
+    const list = fissures.map(f => {
+      const time = f.timeLeft ? f.timeLeft.replace(/\s*\d+s$/, '') : '';
+      return `
+        <div class="fissure-item">
+          <div class="fissure-left">
+            <span class="fissure-tier ${f.tier}">${f.tier}</span>
+            <span class="fissure-node">${f.node}</span>
+            <span class="fissure-type">${f.missionType}</span>
+          </div>
+          <div class="fissure-right">${time}</div>
+        </div>
+      `;
+    }).join("");
+    $("#fissureList").innerHTML = list;
+  } else {
+    $("#fissureList").innerHTML = `<div style="color:var(--muted); font-size:13px;">Aucune fissure active.</div>`;
+  }
+}
+
+async function startWorldstateLoop() {
+  const fetchAndRender = async () => {
+    try {
+      const data = await fetchJSON("https://api.warframestat.us/pc");
+      updateWorldstateUI(data);
+    } catch(e) {
+      console.warn("Échec du chargement du Worldstate :", e.message);
+    }
+  };
+  fetchAndRender();
+  setInterval(fetchAndRender, 60000);
+}
+
+/* --- ANALYSEUR EE.LOG --- */
+let currentLogData = null;
+let selectedLogFile = null;
+let activeChatPartner = null;
+
+function initLogReader() {
+  const dropZone = $("#dropZone");
+  const fileInput = $("#fileInput");
+
+  // Détection automatique si on est sur notre serveur local
+  if (location.protocol.startsWith("http")) {
+    autoDetectEeLog();
+  }
+
+  // Glisser & Déposer
+  window.addEventListener("dragover", e => {
+    e.preventDefault();
+    dropZone.classList.add("hover");
+  });
+  window.addEventListener("dragleave", e => {
+    e.preventDefault();
+    dropZone.classList.remove("hover");
+  });
+  window.addEventListener("drop", e => {
+    e.preventDefault();
+    dropZone.classList.remove("hover");
+    const files = e.dataTransfer.files;
+    if (files.length) {
+      handleLogFile(files[0]);
+    }
+  });
+
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files.length) {
+      handleLogFile(fileInput.files[0]);
+    }
+  });
+
+  // Copier le pseudo / message
+  $("#btnCopyInGame").onclick = () => {
+    if (!activeChatPartner) return;
+    const cmd = `/w ${activeChatPartner} `;
+    navigator.clipboard.writeText(cmd).then(() => {
+      const old = $("#btnCopyInGame").textContent;
+      $("#btnCopyInGame").textContent = "✓ Pseudo Copié !";
+      setTimeout(() => { $("#btnCopyInGame").textContent = old; }, 1200);
+      if (typeof sfxClick === "function") sfxClick();
+    });
+  };
+
+  $("#btnCopyLastMsg").onclick = () => {
+    if (!activeChatPartner || !currentLogData) return;
+    const msgs = currentLogData.chats[activeChatPartner] || [];
+    if (!msgs.length) return;
+    const lastMsg = msgs[msgs.length - 1].text;
+    navigator.clipboard.writeText(lastMsg).then(() => {
+      const old = $("#btnCopyLastMsg").textContent;
+      $("#btnCopyLastMsg").textContent = "✓ Message Copié !";
+      setTimeout(() => { $("#btnCopyLastMsg").textContent = old; }, 1200);
+      if (typeof sfxClick === "function") sfxClick();
+    });
+  };
+
+  // Bouton recharger le log (version par défaut pour drag & drop)
+  $("#btnReloadLog").onclick = () => {
+    if (selectedLogFile) {
+      handleLogFile(selectedLogFile);
+      const old = $("#btnReloadLog").textContent;
+      $("#btnReloadLog").textContent = "✓ Fait";
+      setTimeout(() => { $("#btnReloadLog").textContent = old; }, 1000);
+    }
+  };
+}
+
+async function autoDetectEeLog() {
+  try {
+    const r = await fetch("/api/read-log");
+    if (r.ok) {
+      const data = await r.json();
+      if (data && data.content) {
+        currentLogData = parseEeLog(data.content);
+        renderLogUI();
+        
+        // Configurer le bouton de rafraîchissement pour la détection automatique
+        $("#btnReloadLog").onclick = async () => {
+          await autoDetectEeLog();
+          const old = $("#btnReloadLog").textContent;
+          $("#btnReloadLog").textContent = "✓ Mis à jour";
+          setTimeout(() => { $("#btnReloadLog").textContent = old; }, 1000);
+          if (typeof sfxToggle === "function") sfxToggle(true);
+        };
+      }
+    }
+  } catch (e) {
+    console.log("Détection automatique de EE.log indisponible.");
+  }
+}
+
+function handleLogFile(file) {
+  if (!file) return;
+  selectedLogFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    currentLogData = parseEeLog(text);
+    renderLogUI();
+    if (typeof sfxToggle === "function") sfxToggle(true);
+  };
+  reader.readAsText(file);
+}
+
+function parseEeLog(text) {
+  const lines = text.split(/\r?\n/);
+  const chats = {};
+  let playerName = null;
+  const activeTabs = new Set();
+  
+  const accountRegex = /Account:\s+([a-zA-Z0-9_\-\.]+)/i;
+  const tabRegex = /ChatRedux::AddTab:\s+Adding\s+tab\s+(?:with\s+channel\s+name|for):\s+([a-zA-Z0-9_\-\.]+)/i;
+  const outMsgRegex = /(\d+\.\d+)\s+.*IRC out:\s+PRIVMSG\s+([a-zA-Z0-9_\-\.]+)\s+:(.+)/i;
+  const inMsgRegex = /(\d+\.\d+)\s+.*IRC in:\s+:([a-zA-Z0-9_\-\.]+)!.*PRIVMSG\s+\S+\s+:(.+)/i;
+  
+  for (let line of lines) {
+    // 1. Pseudo
+    const accMatch = accountRegex.exec(line);
+    if (accMatch) {
+      playerName = accMatch[1];
+      continue;
+    }
+    
+    // 2. Canaux
+    const tabMatch = tabRegex.exec(line);
+    if (tabMatch) {
+      const name = tabMatch[1];
+      if (!['Region', 'Recruiting', 'Trading', 'Clan', 'Alliance', 'Squad', 'Council', 'Filters'].includes(name)) {
+        activeTabs.add(name);
+      }
+      continue;
+    }
+    
+    // 3. Chuchotements sortants
+    const outMatch = outMsgRegex.exec(line);
+    if (outMatch) {
+      const time = formatLogTime(outMatch[1]);
+      const partner = outMatch[2];
+      const msg = outMatch[3];
+      if (!chats[partner]) chats[partner] = [];
+      chats[partner].push({ dir: 'out', text: msg, time: time });
+      activeTabs.add(partner);
+      continue;
+    }
+    
+    // 4. Chuchotements entrants
+    const inMatch = inMsgRegex.exec(line);
+    if (inMatch) {
+      const time = formatLogTime(inMatch[1]);
+      const partner = inMatch[2];
+      const msg = inMatch[3];
+      if (!chats[partner]) chats[partner] = [];
+      chats[partner].push({ dir: 'in', text: msg, time: time });
+      activeTabs.add(partner);
+      continue;
+    }
+  }
+  
+  return { playerName, activeTabs: Array.from(activeTabs), chats };
+}
+
+function formatLogTime(secondsStr) {
+  const totalSec = parseFloat(secondsStr);
+  if (isNaN(totalSec)) return '';
+  const hrs = Math.floor(totalSec / 3600) % 24;
+  const mins = Math.floor(totalSec / 60) % 60;
+  const secs = Math.floor(totalSec) % 60;
+  return [hrs, mins, secs].map(v => String(v).padStart(2, '0')).join(':');
+}
+
+function renderLogUI() {
+  if (!currentLogData) return;
+
+  $("#logEmpty").style.display = "none";
+
+  if (currentLogData.playerName) {
+    $("#logPlayerInfo").style.display = "flex";
+    $("#logPlayerName").textContent = currentLogData.playerName;
+  } else {
+    $("#logPlayerInfo").style.display = "none";
+  }
+
+  const partners = currentLogData.activeTabs.filter(p => p !== currentLogData.playerName);
+  if (partners.length) {
+    $("#logTabsSec").style.display = "block";
+    const chips = partners.map(p => {
+      const count = currentLogData.chats[p] ? currentLogData.chats[p].length : 0;
+      const act = p === activeChatPartner ? 'active' : '';
+      return `<span class="log-tab-chip ${act}" onclick="selectChatPartner('${p}')">${p} ${count ? `(${count})` : ''}</span>`;
+    }).join("");
+    $("#logTabsList").innerHTML = chips;
+  } else {
+    $("#logTabsSec").style.display = "none";
+  }
+
+  if (activeChatPartner && partners.includes(activeChatPartner)) {
+    selectChatPartner(activeChatPartner, true);
+  } else if (partners.length && !activeChatPartner) {
+    selectChatPartner(partners[partners.length - 1]);
+  } else {
+    $("#logChatSec").style.display = "none";
+  }
+}
+
+function selectChatPartner(partner, forceRefresh = false) {
+  if (partner === activeChatPartner && !forceRefresh) return;
+  activeChatPartner = partner;
+  
+  document.querySelectorAll(".log-tab-chip").forEach(chip => {
+    chip.classList.toggle("active", chip.textContent.startsWith(partner));
+  });
+
+  $("#logChatSec").style.display = "block";
+  $("#chatPartnerName").textContent = partner;
+
+  const msgs = currentLogData.chats[partner] || [];
+  const box = $("#logChatBox");
+  if (msgs.length) {
+    const html = msgs.map(m => `
+      <div class="chat-msg">
+        <span class="chat-msg-time">[${m.time}]</span>
+        <span class="chat-msg-dir ${m.dir}">${m.dir === 'out' ? 'À' : 'De'} :</span>
+        <span class="chat-msg-body">${m.text}</span>
+      </div>
+    `).join("");
+    box.innerHTML = html;
+    box.scrollTop = box.scrollHeight;
+  } else {
+    box.innerHTML = `<div style="color:var(--muted); font-size:12px; text-align:center; padding:20px 0;">Aucun message échangé (onglet ouvert uniquement).</div>`;
+  }
+}
+
 (async()=>{
   restorePrefs();
+  initLogReader();
+  startWorldstateLoop();
   try{
     await Promise.all([loadVault(),loadDrops()]);
     await loadItems();
