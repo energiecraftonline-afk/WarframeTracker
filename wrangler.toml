@@ -1,17 +1,20 @@
-# Déploiement du Worker via la CLI Wrangler (optionnel — sinon, utilise le dashboard).
+# Déploiement du Worker via Wrangler.
+#   wrangler deploy
 #
-#   1. npm install -g wrangler
-#   2. wrangler login
-#   3. Crée le namespace KV et copie l'id renvoyé dans [[kv_namespaces]] ci-dessous :
-#        wrangler kv namespace create WF_CACHE
-#   4. wrangler deploy
-#
-# Le binding "WF_CACHE" doit correspondre à env.WF_CACHE utilisé dans cloudflare-worker.js
+# Le secret REGISTER_TOKEN n'est PAS ici (c'est un secret) :
+#   wrangler secret put REGISTER_TOKEN --name noisy-wildflower-5226
 
-name = "warframe-tracker-proxy"
+name = "noisy-wildflower-5226"
 main = "cloudflare-worker.js"
 compatibility_date = "2024-11-01"
 
+# Cache proxy partagé (réponses API). Soumis au quota d'écriture KV gratuit.
 [[kv_namespaces]]
 binding = "WF_CACHE"
-id = "REMPLACE_PAR_L_ID_DU_NAMESPACE_KV"
+id = "fe9e413feac34bcab702bb756eccfe7c"
+
+# Annuaire de l'URL du PC (tunnel). D1 = 100 000 écritures/jour (pas le quota KV).
+[[d1_databases]]
+binding = "REGISTRY"
+database_name = "wf-registry"
+database_id = "3e69513f-f3b1-450d-a0a5-0eaaca58ff52"

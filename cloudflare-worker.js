@@ -58,13 +58,24 @@ export default {
     const url = new URL(request.url);
     const hasKV = env && env.WF_CACHE;
 
-    // --- ANNUAIRE : où est l'API du PC (tunnel) en ce moment ---
+    // --- ANNUAIRE (stocké dans D1, pas dans KV, pour éviter le quota
+    // d'écriture KV) : où est l'API du PC (tunnel) en ce moment ---
     // GET  /register            -> renvoie l'URL actuelle du PC (ou null)
     // PUT  /register?token=&url= -> le PC publie son URL de tunnel (auth par token)
+    const STALE_MS = 6 * 60 * 60 * 1000; // 6 h : au-delà, on considère le PC hors-ligne
     if (url.pathname === '/register') {
+      const hasD1 = env && env.REGISTRY;
       if (request.method === 'GET') {
-        const v = hasKV ? await env.WF_CACHE.get('__pc_api_url__') : null;
-        return json({ url: v || null }, 200);
+        let pcUrl = null;
+        if (hasD1) {
+          const row = await env.REGISTRY.prepare(
+            'SELECT v, updated_at FROM registry WHERE k = ?'
+          ).bind('pc_api').first();
+          if (row && row.v && (Date.now() - Number(row.updated_at) < STALE_MS)) {
+            pcUrl = row.v;
+          }
+        }
+        return json({ url: pcUrl }, 200);
       }
       if (request.method === 'PUT' || request.method === 'POST') {
         const token = url.searchParams.get('token');
@@ -75,11 +86,13 @@ export default {
         if (!pcUrl || !/^https:\/\/[^ ]+$/.test(pcUrl)) {
           return json({ error: 'url invalide' }, 400);
         }
-        if (hasKV) {
-          // Expire au bout de 6 h : si le PC arrête de se ré-enregistrer,
-          // l'entrée disparaît et le site retombe sur le cache KV.
-          await env.WF_CACHE.put('__pc_api_url__', pcUrl, { expirationTtl: 6 * 60 * 60 });
+        if (!hasD1) {
+          return json({ error: 'D1 (REGISTRY) non lié au worker' }, 503);
         }
+        await env.REGISTRY.prepare(
+          `INSERT INTO registry (k, v, updated_at) VALUES (?, ?, ?)
+           ON CONFLICT(k) DO UPDATE SET v = excluded.v, updated_at = excluded.updated_at`
+        ).bind('pc_api', pcUrl, Date.now()).run();
         return json({ ok: true, url: pcUrl }, 200);
       }
       return json({ error: 'méthode non supportée' }, 405);
@@ -133,11 +146,15 @@ export default {
     if (upstream.status === 200) {
       const body = await upstream.text();
       if (hasKV) {
-        // expirationTtl gère l'expiration automatiquement (pas de timestamp à stocker)
-        await env.WF_CACHE.put(targetUrl, body, {
-          expirationTtl: Math.max(60, ttl),
-          metadata: { ct: contentType }
-        });
+        // expirationTtl gère l'expiration automatiquement (pas de timestamp à stocker).
+        // Fail-soft : si le quota d'écriture KV est atteint, on sert quand même
+        // la réponse sans la mettre en cache (pas d'erreur 500).
+        try {
+          await env.WF_CACHE.put(targetUrl, body, {
+            expirationTtl: Math.max(60, ttl),
+            metadata: { ct: contentType }
+          });
+        } catch (e) { /* quota KV atteint : on ignore et on sert la donnée */ }
       }
       return new Response(body, {
         status: 200,
