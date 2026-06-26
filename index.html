@@ -314,6 +314,8 @@
   Prix live (vendeurs connectés). Non affilié à Digital Extremes. Vérifie toujours avant d'échanger.
 </footer>
 
+<!-- Charger la base de données statique d'items pour éviter le blocage CORS en local (file://) -->
+<script src="items.js"></script>
 <script>
 const API="https://api.warframe.market/v2";
 const CDN="https://warframe.market/static/assets/";
@@ -646,19 +648,19 @@ async function fetchJSON(url){
 }
 
 /* ---------- liste complète ---------- */
-/* ---------- liste complète ---------- */
 async function loadItems(){
   statusEl.innerHTML=`<span class="spin"></span> ${t("st_loading")}`;
-  const res=await fetch("items.json");
-  if(!res.ok) throw new Error("Impossible de charger la liste des items.");
-  const data=await res.json();
-  ALL=data.map(it=>{
+  if (typeof ITEMS_LIST === "undefined") {
+    throw new Error("La base de données items.js est manquante ou illisible.");
+  }
+  ALL=ITEMS_LIST.map(it=>{
     const c=cacheGet(it.slug);
     return {
       slug:it.slug, name:it.name, thumb:it.thumb?CDN+it.thumb:"", isSet:it.slug.endsWith("_set"),
       tags:it.tags||[], plat:c?c.plat:null, online:c?c.online:0,
       smin:c?c.smin:null, smax:c?c.smax:null, svol:c?c.svol:null, slast:c?c.slast:null,
       orders:c&&c.orders!=null?c.orders:null, scanned:!!c,
+      perTrade:c?c.perTrade:1, rawPrice:c?c.rawPrice:null,
       vaulted:vaultStatus(it.name), tradable:tradableStatus(it.name),
       drop:dropInfo(it.name), relicRewards:relicContents(it.name),
       droppable:!!dropInfo(it.name), err:null, loading:false
@@ -724,6 +726,41 @@ function priceCell(d){
   if(d.plat!=null){
     const tr=d.trend==="up"?`<span class="trend up" title="le prix monte">▲</span>`
             :d.trend==="down"?`<span class="trend down" title="le prix baisse">▼</span>`:"";
+            
+    if(d.perTrade && d.perTrade > 1){
+      if(isRelicItem(d)){
+        const relicIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-left:4px;"><path d="M12 2C8 2 5 6 5 11c0 5 3 11 7 11s7-6 7-11c0-5-3-11-7-11z"></path><path d="M5 11h14M12 2v20"></path></svg>`;
+        const platIcon = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" style="vertical-align:-1px; margin: 0 2px;"><circle cx="12" cy="12" r="10"></circle><path d="M10 8h4a3 3 0 0 1 0 6h-4v4" stroke-linecap="round" stroke-linejoin="round"></path></svg>`;
+        return `
+          <div style="display:flex; flex-direction:column; align-items:flex-end; line-height:1.2;">
+            <div style="display:flex; align-items:center;">
+              ${tr}
+              <span class="plat" style="color:var(--red); text-shadow:0 0 8px rgba(255,93,108,.3); font-size:15px;">${d.plat}</span>
+              ${relicIcon}
+            </div>
+            <div style="color:var(--muted); font-size:11px; margin-top:2px; font-weight:600; display:flex; align-items:center;">
+              <span>${d.rawPrice}</span>
+              ${platIcon}
+              <span>/ trade</span>
+            </div>
+          </div>
+        `;
+      } else {
+        const cubesIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--txt)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-left:4px;"><rect x="9" y="3" width="6" height="6" rx="1"></rect><rect x="4" y="11" width="6" height="6" rx="1"></rect><rect x="14" y="11" width="6" height="6" rx="1"></rect></svg>`;
+        return `
+          <div style="display:flex; flex-direction:column; align-items:flex-end; line-height:1.2;">
+            <div style="display:flex; align-items:center;">
+              ${tr}
+              <span class="plat" style="color:var(--txt); text-shadow:none; font-size:15px;">${d.plat}</span>
+              ${cubesIcon}
+            </div>
+            <div style="color:var(--orange); font-size:11px; margin-top:2px; font-weight:600;">
+              ${d.perTrade} per trade
+            </div>
+          </div>
+        `;
+      }
+    }
     return `${tr}<span class="plat">${d.plat} PL</span>`;
   }
   if(d.loading) return `<span class="spin"></span>`;
@@ -904,7 +941,7 @@ function patchRow(d,flash){
 /* ---------- scanner de prix en arrière-plan ---------- */
 // écrit l'état prix de l'item dans le cache
 function cacheSet(d){
-  priceCache[d.slug]={plat:d.plat,online:d.online,smin:d.smin,smax:d.smax,svol:d.svol,slast:d.slast,orders:d.orders,ts:Date.now()};
+  priceCache[d.slug]={plat:d.plat,online:d.online,smin:d.smin,smax:d.smax,svol:d.svol,slast:d.slast,orders:d.orders,perTrade:d.perTrade,rawPrice:d.rawPrice,ts:Date.now()};
 }
 // prix EN VENTE actuellement : bleu = le plus bas offert par un vendeur en ligne
 function computePrice(d,orders){
@@ -915,8 +952,19 @@ function computePrice(d,orders){
     .filter(o=>o.type==="sell"&&o.user&&
       (o.user.status==="ingame"||o.user.status==="online"))
     .sort((a,b)=>a.platinum-b.platinum);
-  if(!sells.length){ d.plat=null; d.online=0; d.lowSeller=null; }
-  else{ d.plat=sells[0].platinum; d.online=sells.length; d.lowSeller=sells[0].user.ingameName; }   // vrai plus bas + son vendeur
+  if(!sells.length){ d.plat=null; d.online=0; d.lowSeller=null; d.perTrade=1; d.rawPrice=null; }
+  else{
+    const o=sells[0];
+    d.perTrade=o.per_trade||1;
+    d.rawPrice=o.platinum;
+    d.lowSeller=o.user.ingameName;
+    d.online=sells.length;
+    if(isRelicItem(d) && d.perTrade > 1){
+      d.plat = Math.round((o.platinum / d.perTrade) * 100) / 100;
+    } else {
+      d.plat = o.platinum;
+    }
+  }
   // tendance instantanée : le prix monte (up) ou baisse (down) vs le dernier relevé
   if(old!=null && d.plat!=null && d.plat!==old) d.trend=d.plat>old?"up":"down";
   d.scanned=true;
@@ -971,7 +1019,17 @@ async function startScan(force){
   const gen=++scanGen;                 // invalide tout scan précédent
   const queue=VIEW.filter(d=>{
     if(force){d.err=null;return true;}
-    if(cacheGet(d.slug)){const c=cacheGet(d.slug);d.plat=c.plat;d.online=c.online;d.smin=c.smin;d.smax=c.smax;d.svol=c.svol;return false;}
+    if(cacheGet(d.slug)){
+      const c=cacheGet(d.slug);
+      d.plat=c.plat;
+      d.online=c.online;
+      d.smin=c.smin;
+      d.smax=c.smax;
+      d.svol=c.svol;
+      d.perTrade=c.perTrade||1;
+      d.rawPrice=c.rawPrice||c.plat;
+      return false;
+    }
     return d.plat==null || d.err;
   });
   const total=queue.length;
