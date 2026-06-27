@@ -2089,19 +2089,29 @@ async function discoverPcApi(){
 // Inventaire possédé (AlecaFrame) découvert via le PC : { slug: quantité }.
 let OWNED = {};
 let ownedLoaded = false;
+function applyInventory(j){
+  OWNED = {};
+  (j.items||[]).forEach(it=>{ OWNED[it.slug] = it.count; });
+  for(const d of ALL){ d.owned = OWNED[d.slug] || 0; }
+  ownedLoaded = Object.keys(OWNED).length>0;
+  reflow();
+}
 async function loadInventory(){
+  // 1. Servi en LOCAL par server-db.js (lancer_tracker.bat) : appel same-origin
+  //    direct — pas besoin du tunnel (non enregistré en mode local).
+  if(location.protocol.startsWith("http")){
+    try{
+      const r = await fetch(`/api/inventory`, { cache: "no-store" });
+      if(r.ok){ applyInventory(await r.json()); return; }
+    }catch(e){ /* pas servi localement : on tente le tunnel */ }
+  }
+  // 2. Site public (github.io) : via le PC découvert (tunnel).
   const pc = await discoverPcApi();
   if(!pc) return;
   try{
     const root = pc.replace(/\/proxy\/?$/,"");
     const r = await fetch(`${root}/api/inventory`, { cache: "no-store" });
-    if(!r.ok) return;
-    const j = await r.json();
-    OWNED = {};
-    (j.items||[]).forEach(it=>{ OWNED[it.slug] = it.count; });
-    for(const d of ALL){ d.owned = OWNED[d.slug] || 0; }
-    ownedLoaded = Object.keys(OWNED).length>0;
-    reflow();
+    if(r.ok){ applyInventory(await r.json()); }
   }catch(e){ /* PC/inventaire indispo : on ignore */ }
 }
 
