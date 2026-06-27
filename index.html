@@ -1655,6 +1655,30 @@ header::after{
   #tbl th:nth-child(7), #tbl td:nth-child(7){ display:none; }
 }
 
+
+/* ===== INJECTION FIX RESPIRATION ===== */
+/* ====================================================================
+   FIX "respiration" qui lag : passer les pulsations de box-shadow/border/
+   background-position (PAINT, repaint par frame) vers de l'opacity (COMPOSITE
+   GPU). La bordure néon et la lueur restent (statiques), elles respirent juste
+   via l'opacité — plus de repaint.
+   ==================================================================== */
+
+/* Bordure néon "respiratoire" des lignes hot : opacity au lieu de box-shadow */
+tbody tr.hot-row td:first-child::before,
+.legend-row-preview.hot-row::before{
+  animation: softPulse 2.6s infinite ease-in-out !important;
+}
+
+/* Badge "Super Vente" (.verdict.hot) : respire en opacity, pas de bounce
+   box-shadow ni de sparks (background-position) qui repeignent. */
+.verdict.hot{
+  animation: softPulse 2.4s infinite ease-in-out !important;
+  box-shadow: 0 0 9px rgba(255, 159, 67, 0.5);
+}
+.verdict.hot::before,
+.verdict.hot::after{ animation: none !important; }
+
 </style>
 </head>
 <body>
