@@ -2816,7 +2816,18 @@ async function watchOne(d){
   // Filtrer les ordres de vente actifs (vendeurs en ligne ou en jeu)
   const currentSells = orders.filter(o=>o.type==="sell"&&o.visible!==false&&o.user&&(o.user.status==="ingame"||o.user.status==="online"));
   const ids = new Set(currentSells.map(o=>o.id));
-  
+
+  // OPTIM : si le plus bas vendeur en ligne (prix + vendeur) est inchangé,
+  // rien d'affiché ne change -> on passe directement à l'item suivant.
+  let low=null; for(const o of currentSells){ if(!low||o.platinum<low.platinum) low=o; }
+  const lowKey = low ? (((low.user&&low.user.ingameName)||low.id)+"@"+low.platinum) : null;
+  if(lowKey===d._lowKey){
+    d._sellOrdersMap = new Map(currentSells.map(o=>[o.id, o.platinum])); // garder l'état à jour
+    d._ids = ids;
+    return;
+  }
+  d._lowKey = lowKey;
+
   let soldPrices = [];
   if(d._sellOrdersMap){
     // Identifier les ordres du poll précédent qui ont disparu (vendus)
