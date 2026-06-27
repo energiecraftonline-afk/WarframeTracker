@@ -2660,6 +2660,13 @@ function tagHtml(tags){
     return `<span class="tag ${c}">${t}</span>`;
   }).join("");
 }
+// Chip Vaulted/Dispo pour les reliques (à côté des tags RELIC/AXI).
+function vaultChip(d){
+  if(!(d.tags&&d.tags.includes("relic"))) return "";
+  if(d.vaulted===true) return '<span class="vault y" title="Relique vaultée (non farmable)">🔒 Vaulted</span> ';
+  if(d.vaulted===false) return '<span class="vault n" title="Relique disponible (farmable)">✅ Dispo</span> ';
+  return "";
+}
 function priceCell(d){
   if(d.err){
     if(d.err==="404") return `<span class="err" data-slug="${d.slug}" style="color:var(--muted);" title="Aucun ordre trouvé sur warframe.market pour cet objet (404). Cliquez pour réessayer.">📭 Aucun ordre</span>`;
@@ -3368,7 +3375,7 @@ function buildPreview(d){
         <span class="k">Statut</span><span>${vault}</span>
         <span class="k">Drop</span><span>${dropTxt}</span>
       </div>
-      ${d.tags&&d.tags.length?`<div class="pv-tags">${tagHtml(d.tags)}</div>`:""}
+      ${d.tags&&d.tags.length?`<div class="pv-tags">${vaultChip(d)}${tagHtml(d.tags)}</div>`:""}
       ${relics}
       ${sources}
       ${contents}
