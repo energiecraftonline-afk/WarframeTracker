@@ -2066,15 +2066,24 @@ const CLOUDFLARE_WORKER_URL = "https://noisy-wildflower-5226.energiecraft-online
 // retombe automatiquement sur le cache KV du worker.
 let PC_PROXY_BASE = null;
 let PC_PROXY_TRIED = false;
+let PC_PROXY_PROMISE = null;
 async function discoverPcApi(){
   if(PC_PROXY_TRIED) return PC_PROXY_BASE;
-  PC_PROXY_TRIED = true;
-  if(!CLOUDFLARE_WORKER_URL) return null;
-  try{
-    const r = await fetch(`${CLOUDFLARE_WORKER_URL}/register`, { cache: "no-store" });
-    if(r.ok){ const j = await r.json(); if(j && j.url) PC_PROXY_BASE = j.url; }
-  }catch(e){ /* annuaire injoignable : on ignore */ }
-  return PC_PROXY_BASE;
+  // On met en cache la PROMESSE (pas juste le flag) : les appels concurrents au
+  // démarrage (scan, dump, inventaire) attendent le même résultat au lieu de
+  // recevoir un PC_PROXY_BASE encore null (race condition).
+  if(PC_PROXY_PROMISE) return PC_PROXY_PROMISE;
+  PC_PROXY_PROMISE = (async()=>{
+    if(CLOUDFLARE_WORKER_URL){
+      try{
+        const r = await fetch(`${CLOUDFLARE_WORKER_URL}/register`, { cache: "no-store" });
+        if(r.ok){ const j = await r.json(); if(j && j.url) PC_PROXY_BASE = j.url; }
+      }catch(e){ /* annuaire injoignable : on ignore */ }
+    }
+    PC_PROXY_TRIED = true;
+    return PC_PROXY_BASE;
+  })();
+  return PC_PROXY_PROMISE;
 }
 
 // Inventaire possédé (AlecaFrame) découvert via le PC : { slug: quantité }.
@@ -2862,7 +2871,7 @@ function render(){
     const d=VIEW[i];
     html[i]=`<tr class="${rowClass(d)}" data-slug="${d.slug}">
       <td class="rank">${rankByPlat&&d.plat!=null?(i+1):""}</td>
-      <td class="name"><span class="itemlink" data-slug="${d.slug}" title="Voir la fiche complète">${d.thumb?`<img src="${d.thumb}" loading="lazy" alt="">`:""}<span>${d.vaulted===true?'<span class="lock" title="Vaulted">🔒</span>':""}${d.name}${d.owned>0?`<span class="owned-badge" title="Dans votre inventaire AlecaFrame">📦 x${d.owned}</span>`:""}</span></span></td>
+      <td class="name"><span class="itemlink" data-slug="${d.slug}" title="Voir la fiche complète">${d.thumb?`<img src="${d.thumb}" loading="lazy" alt="">`:""}<span>${(d.vaulted===true && !(d.tags&&d.tags.includes("relic")))?'<span class="lock" title="Vaulted">🔒</span>':""}${d.name}${(d.tags&&d.tags.includes("relic"))?(d.vaulted===true?'<span class="vault y" style="margin-left:6px" title="Relique vaultée (non farmable)">🔒 Vaulted</span>':d.vaulted===false?'<span class="vault n" style="margin-left:6px" title="Relique disponible (farmable)">✅ Dispo</span>':""):""}${d.owned>0?`<span class="owned-badge" title="Dans votre inventaire AlecaFrame">📦 x${d.owned}</span>`:""}</span></span></td>
       <td class="num pcell" data-slug="${d.slug}">${priceCell(d)}</td>
       <td class="num lastcell" data-slug="${d.slug}">${lastCell(d)}</td>
       <td class="num soldcell" data-slug="${d.slug}">${soldCell(d)}</td>
