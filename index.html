@@ -1679,6 +1679,39 @@ tbody tr.hot-row td:first-child::before,
 .verdict.hot::before,
 .verdict.hot::after{ animation: none !important; }
 
+
+/* ===== INJECTION RESPIRATION = COULEUR AFFAIRE ===== */
+/* ====================================================================
+   Respiration des lignes = couleur de l'AFFAIRE (deal), jamais bleu.
+   La bordure néon + la lueur suivent le verdict de la ligne via :has().
+   - bonne affaire (.verdict.save)  -> vert
+   - trop cher     (.verdict.warn)  -> rouge
+   - super vente   (.verdict.hot)   -> or
+   Défaut (ligne hot sans badge) -> or (au lieu du bleu).
+   ==================================================================== */
+tbody tr.hot-row{
+  --p-border: rgba(255, 207, 107, 0.85);
+  --p-glow-color: rgba(255, 207, 107, 0.42);
+}
+tbody tr.hot-row:has(.verdict.save){
+  --p-border: rgba(76, 224, 164, 0.9);
+  --p-glow-color: rgba(76, 224, 164, 0.45);
+}
+tbody tr.hot-row:has(.verdict.warn){
+  --p-border: rgba(255, 93, 108, 0.9);
+  --p-glow-color: rgba(255, 93, 108, 0.45);
+}
+tbody tr.hot-row:has(.verdict.hot){
+  --p-border: rgba(255, 207, 107, 0.95);
+  --p-glow-color: rgba(255, 207, 107, 0.55);
+}
+
+/* La lueur externe de la ligne suit la même couleur (source unique). */
+#tbl tbody tr.hot-row{ box-shadow: 0 0 13px var(--p-glow-color) !important; }
+
+/* Bordure latérale gauche cohérente avec la couleur d'affaire. */
+tbody tr.hot-row td:first-child{ border-left-color: var(--p-border) !important; }
+
 </style>
 </head>
 <body>
