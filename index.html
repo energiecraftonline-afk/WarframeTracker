@@ -3797,6 +3797,19 @@ function switchSbTab(tab) {
 }
 
 /* --- API WORLDSTATE --- */
+// Temps restant calculé depuis un timestamp ISO (l'API ne fournit pas toujours
+// timeLeft — ex. vallisCycle, voidTrader — d'où des champs vides).
+function fmtUntil(iso){
+  if(!iso) return '';
+  const ms = new Date(iso).getTime() - Date.now();
+  if(isNaN(ms) || ms<=0) return '';
+  const s=Math.floor(ms/1000), d=Math.floor(s/86400), h=Math.floor((s%86400)/3600), m=Math.floor((s%3600)/60);
+  if(d>0) return `${d}j ${h}h`;
+  if(h>0) return `${h}h ${m}m`;
+  if(m>0) return `${m}m`;
+  return `${s}s`;
+}
+
 function updateWorldstateUI(data) {
   if (!data) return;
 
@@ -3804,7 +3817,7 @@ function updateWorldstateUI(data) {
   const cetus = data.cetusCycle;
   if (cetus) {
     const isDay = cetus.isDay;
-    const time = cetus.timeLeft ? cetus.timeLeft.replace(/\s*\d+s$/, '') : '';
+    const time = (cetus.timeLeft ? cetus.timeLeft.replace(/\s*\d+s$/, '') : '') || fmtUntil(cetus.expiry);
     const state = isDay ? `<span class="cycle-val day">☀️ Jour (${time})</span>` : `<span class="cycle-val night">🌙 Nuit (${time})</span>`;
     $("#cycleCetus").innerHTML = `<span class="cycle-name">Cetus (Plaines)</span>${state}`;
   }
@@ -3813,7 +3826,7 @@ function updateWorldstateUI(data) {
   const vallis = data.vallisCycle;
   if (vallis) {
     const isWarm = vallis.isWarm;
-    const time = vallis.timeLeft ? vallis.timeLeft.replace(/\s*\d+s$/, '') : '';
+    const time = (vallis.timeLeft ? vallis.timeLeft.replace(/\s*\d+s$/, '') : '') || fmtUntil(vallis.expiry);
     const state = isWarm ? `<span class="cycle-val warm">🔥 Chaud (${time})</span>` : `<span class="cycle-val cold">❄️ Froid (${time})</span>`;
     $("#cycleVallis").innerHTML = `<span class="cycle-name">Vallée de l'Orbe</span>${state}`;
   }
@@ -3822,7 +3835,7 @@ function updateWorldstateUI(data) {
   const cambion = data.cambionCycle;
   if (cambion) {
     const active = cambion.active;
-    const time = cambion.timeLeft ? cambion.timeLeft.replace(/\s*\d+s$/, '') : '';
+    const time = (cambion.timeLeft ? cambion.timeLeft.replace(/\s*\d+s$/, '') : '') || fmtUntil(cambion.expiry);
     const state = active === 'vome' ? `<span class="cycle-val vome">🔵 Vome (${time})</span>` : `<span class="cycle-val fass">🟠 Fass (${time})</span>`;
     $("#cycleDeimos").innerHTML = `<span class="cycle-name">Puits de Cambion</span>${state}`;
   }
@@ -3847,9 +3860,13 @@ function updateWorldstateUI(data) {
   // Baro Ki'Teer
   const baro = data.voidTrader;
   if (baro) {
-    const active = baro.active;
-    const time = baro.timeLeft ? baro.timeLeft.replace(/\s*\d+s$/, '') : '';
+    // L'API ne fournit ni "active" ni "timeLeft" : on calcule depuis activation/expiry.
+    const now = Date.now();
+    const actTs = baro.activation ? new Date(baro.activation).getTime() : 0;
+    const expTs = baro.expiry ? new Date(baro.expiry).getTime() : 0;
+    const active = (baro.active != null) ? baro.active : (now >= actTs && now < expTs);
     if (active) {
+      const time = (baro.timeLeft ? baro.timeLeft.replace(/\s*\d+s$/, '') : '') || fmtUntil(baro.expiry);
       $("#baroStatus").innerHTML = `<span style="color:var(--green)">🟢 Présent à ${baro.location}</span><br><span style="font-size:12px; color:var(--muted)">Départ dans ${time}</span>`;
       if (baro.inventory && baro.inventory.length) {
         $("#baroItems").style.display = "block";
@@ -3864,7 +3881,9 @@ function updateWorldstateUI(data) {
         $("#baroItems").style.display = "none";
       }
     } else {
-      $("#baroStatus").innerHTML = `<span style="color:var(--muted)">⏳ Arrive dans ${time}</span>`;
+      const time = fmtUntil(baro.activation);
+      const loc = baro.location ? ` — ${baro.location}` : '';
+      $("#baroStatus").innerHTML = `<span style="color:var(--muted)">⏳ Arrive dans ${time||'?'}${loc}</span>`;
       $("#baroItems").style.display = "none";
     }
   }
