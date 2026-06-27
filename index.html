@@ -168,19 +168,15 @@
     border: 1px solid var(--green);
     color: #7dffc4;
     text-shadow: 0 0 4px rgba(76, 224, 164, 0.4);
-    animation: breatheGreen 2.5s infinite ease-in-out;
+    box-shadow: 0 0 7px rgba(76, 224, 164, 0.45);
+    animation: softPulse 2.6s infinite ease-in-out;
   }
-  @keyframes breatheGreen {
-    0%, 100% {
-      box-shadow: 0 0 3px rgba(76, 224, 164, 0.2);
-      border-color: rgba(76, 224, 164, 0.4);
-      background: rgba(76, 224, 164, 0.1);
-    }
-    50% {
-      box-shadow: 0 0 10px rgba(76, 224, 164, 0.65);
-      border-color: rgba(76, 224, 164, 1);
-      background: rgba(76, 224, 164, 0.22);
-    }
+  /* Pulse GPU (opacity uniquement) : remplace les anciennes respirations qui
+     animaient box-shadow/border/background (repaint par frame sur CHAQUE ligne
+     visible -> lag). Même effet de respiration, sans coût de repaint. */
+  @keyframes softPulse {
+    0%, 100% { opacity: 0.82; }
+    50% { opacity: 1; }
   }
 
   /* Badge Négatif (Rouge) - Animation Respire */
@@ -189,19 +185,8 @@
     border: 1px solid var(--red);
     color: #ff5d6c;
     text-shadow: 0 0 4px rgba(255, 93, 108, 0.4);
-    animation: breatheRed 2.5s infinite ease-in-out;
-  }
-  @keyframes breatheRed {
-    0%, 100% {
-      box-shadow: 0 0 3px rgba(255, 93, 108, 0.2);
-      border-color: rgba(255, 93, 108, 0.4);
-      background: rgba(255, 93, 108, 0.1);
-    }
-    50% {
-      box-shadow: 0 0 10px rgba(255, 93, 108, 0.65);
-      border-color: rgba(255, 93, 108, 1);
-      background: rgba(255, 93, 108, 0.22);
-    }
+    box-shadow: 0 0 7px rgba(255, 93, 108, 0.45);
+    animation: softPulse 2.6s infinite ease-in-out;
   }
 
   /* Badge Très Positif (Orange) - Animation Bounce + Particules */
@@ -289,7 +274,7 @@
     contain: none;
     content-visibility: visible;
     background: linear-gradient(90deg, rgba(84, 216, 255, 0.16) 0%, rgba(84, 216, 255, 0.03) 100%) !important; /* Dégradé lumineux uni sur toute la ligne */
-    animation: hotRowGlow 2.5s infinite ease-in-out;
+    box-shadow: 0 0 13px rgba(84, 216, 255, 0.45); /* lueur statique (plus de repaint box-shadow par frame) */
   }
   @keyframes hotRowGlow {
     0%, 100% {
@@ -318,7 +303,7 @@
     contain: none;
     content-visibility: visible;
     background: linear-gradient(90deg, rgba(255, 93, 108, 0.16) 0%, rgba(255, 93, 108, 0.03) 100%) !important; /* Dégradé lumineux uni sur toute la ligne */
-    animation: hotRowGlowRed 2.5s infinite ease-in-out;
+    box-shadow: 0 0 13px rgba(255, 93, 108, 0.45); /* lueur statique (plus de repaint box-shadow par frame) */
   }
   @keyframes hotRowGlowRed {
     0%, 100% {
@@ -347,7 +332,7 @@
     contain: none;
     content-visibility: visible;
     background: linear-gradient(90deg, rgba(76, 224, 164, 0.16) 0%, rgba(76, 224, 164, 0.03) 100%) !important; /* Dégradé lumineux uni sur toute la ligne */
-    animation: hotRowGlowGreen 2.5s infinite ease-in-out;
+    box-shadow: 0 0 13px rgba(76, 224, 164, 0.45); /* lueur statique (plus de repaint box-shadow par frame) */
   }
   @keyframes hotRowGlowGreen {
     0%, 100% {
