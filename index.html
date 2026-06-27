@@ -2012,7 +2012,10 @@ function computeSetFarmable(){
 
 /* ---------- cache prix ---------- */
 function loadCache(){try{return JSON.parse(localStorage.getItem("wf_prices2")||"{}");}catch{return{};}}
-function saveCache(){try{localStorage.setItem("wf_prices2",JSON.stringify(priceCache));}catch{}}
+// Débounce : pendant un scan, saveCache est appelé très souvent ; on coalesce
+// les écritures (le JSON.stringify de tout le cache est coûteux et bloque l'UI).
+let _saveCacheT=null;
+function saveCache(){ if(_saveCacheT) return; _saveCacheT=setTimeout(()=>{ _saveCacheT=null; try{localStorage.setItem("wf_prices2",JSON.stringify(priceCache));}catch{} },1500); }
 function cacheGet(slug){const c=priceCache[slug];return (c&&Date.now()-c.ts<CACHE_TTL)?c:null;}
 
 /* ---------- fetch : pool multi-proxy (warframe.market limite ~3 req/s PAR IP) ----------
@@ -2547,7 +2550,11 @@ function markHot(tr,on){
   tr.classList.toggle("hot-row",on);
 }
 function patchRow(d,flash){
-  const cell=rowsEl.querySelector(`.pcell[data-slug="${CSS.escape(d.slug)}"]`);
+  // 1 seule requête DOM globale (la ligne), puis recherches limitées à cette ligne.
+  // Évite 6 querySelector globaux par item (coûteux pendant un scan de milliers de lignes).
+  const tr=rowsEl.querySelector(`tr[data-slug="${CSS.escape(d.slug)}"]`);
+  if(!tr) return;
+  const cell=tr.querySelector(".pcell");
   if(cell){
     cell.innerHTML=priceCell(d);
     const o=cell.nextElementSibling; if(o&&o.classList.contains("ocell")) o.textContent=d.online||"—";
@@ -2555,14 +2562,13 @@ function patchRow(d,flash){
       cell.classList.remove("flash-up","flash-down"); void cell.offsetWidth;
       cell.classList.add(flash==="down"?"flash-down":"flash-up");
     }
-    const tr=cell.closest("tr");
-    if(tr){ tr.classList.toggle("row-hi",priceEdge(d)==="hi"); tr.classList.toggle("row-lo",priceEdge(d)==="lo"); markHot(tr,isHotRow(d)); }
+    tr.classList.toggle("row-hi",priceEdge(d)==="hi"); tr.classList.toggle("row-lo",priceEdge(d)==="lo"); markHot(tr,isHotRow(d));
   }
-  const lc=rowsEl.querySelector(`.lastcell[data-slug="${CSS.escape(d.slug)}"]`); if(lc) lc.innerHTML=lastCell(d);
-  const sc=rowsEl.querySelector(`.soldcell[data-slug="${CSS.escape(d.slug)}"]`); if(sc) sc.innerHTML=soldCell(d);
-  const vc=rowsEl.querySelector(`.salescell[data-slug="${CSS.escape(d.slug)}"]`); if(vc) vc.innerHTML=salesCell(d);
-  const dc=rowsEl.querySelector(`.dealcell[data-slug="${CSS.escape(d.slug)}"]`); if(dc) dc.innerHTML=dealCell(d);
-  const mc=rowsEl.querySelector(`tr[data-slug="${CSS.escape(d.slug)}"] .mpcell`); if(mc) mc.outerHTML=mpCell(d);
+  const lc=tr.querySelector(".lastcell"); if(lc) lc.innerHTML=lastCell(d);
+  const sc=tr.querySelector(".soldcell"); if(sc) sc.innerHTML=soldCell(d);
+  const vc=tr.querySelector(".salescell"); if(vc) vc.innerHTML=salesCell(d);
+  const dc=tr.querySelector(".dealcell"); if(dc) dc.innerHTML=dealCell(d);
+  const mc=tr.querySelector(".mpcell"); if(mc) mc.outerHTML=mpCell(d);
   checkAlerts(d);
   if(typeof pvSlug!=="undefined"&&d.slug===pvSlug){ previewEl.innerHTML=buildPreview(d); }
 }
@@ -2692,7 +2698,8 @@ async function loadBulkPrices(){
     d.svol=last.volume||0;
     const lp=last.median!=null?last.median:last.avg_price;
     if(lp!=null) d.slast=Math.round(lp);
-    if(d.plat==null && last.min_price!=null){ d.plat=Math.round(last.min_price); d._approxPlat=true; }
+    // Dump PC = frais (MariaDB) -> pas de re-scan live (évite le lag). Dump relics.run = approximatif -> à affiner.
+    if(d.plat==null && last.min_price!=null){ d.plat=Math.round(last.min_price); if(!fromPc) d._approxPlat=true; }
     d._statsTs=Date.now(); d._statsScanned=true;   // stats fournies -> pas de /v1/statistics
     cacheSet(d);
     n++;
