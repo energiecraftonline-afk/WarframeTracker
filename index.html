@@ -1561,6 +1561,100 @@ button.primary:hover{ box-shadow:0 0 22px rgba(70,214,255,.6); }
   clip-path:var(--cut); box-shadow:var(--shadow); backdrop-filter:blur(8px);
 }
 
+
+/* ===== INJECTION RESPONSIVE MOBILE + FINITIONS ===== */
+/* ====================================================================
+   WARFRAME UI — RESPONSIVE MOBILE + FINITIONS (couche additive)
+   ==================================================================== */
+
+/* ---------- Retrait des particules orange des lignes "hot" ----------
+   (animaient background-position = repaint par frame ; supprimées). On garde
+   la lueur statique et la bordure de la ligne. */
+tbody tr.hot-row td:first-child::after{ content:none !important; display:none !important; animation:none !important; }
+
+/* entête de tableau OPAQUE (sinon la 1re ligne transparaît sous le thead sticky) */
+#tbl thead th{
+  background:linear-gradient(180deg,#13212f,#0b141e) !important;
+  position:sticky; top:0; z-index:5;
+}
+
+/* ---------- Finitions desktop : scrollbar Tenno + arête diagonale ---------- */
+*::-webkit-scrollbar{ width:10px; height:10px; }
+*::-webkit-scrollbar-track{ background:rgba(7,14,22,.6); }
+*::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg,#1c3a52,#2f6f90);
+  border:1px solid rgba(70,214,255,.30); border-radius:2px;
+}
+*::-webkit-scrollbar-thumb:hover{ background:#2f6f90; }
+*{ scrollbar-color:#2f6f90 rgba(7,14,22,.6); }
+
+/* liseré diagonal cyan sous l'en-tête (statique, pas de repaint) */
+header{ position:relative; }
+header::after{
+  content:""; position:absolute; left:0; right:0; bottom:-1px; height:2px;
+  background:linear-gradient(90deg, transparent, rgba(70,214,255,.55) 30%, rgba(255,207,107,.45) 70%, transparent);
+  pointer-events:none;
+}
+
+/* ---------- TABLETTE / PETIT DESKTOP (<= 900px) ---------- */
+@media (max-width: 900px){
+  .app-layout{ padding:8px 12px 64px; }
+  header h1{ font-size:15px; letter-spacing:2px; }
+}
+
+/* ---------- MOBILE (<= 760px) ---------- */
+@media (max-width: 760px){
+  header{
+    flex-direction:column; align-items:stretch; gap:8px;
+    padding:10px 12px; clip-path:none; border-top-width:2px;
+  }
+  header h1{ font-size:14px; text-align:center; justify-content:center; display:flex; align-items:center; gap:8px; }
+  .controls{ flex-wrap:wrap; gap:6px; justify-content:stretch; }
+  .controls > button, #lang, #sound, #refresh, #export-db{
+    flex:1 1 auto; min-height:44px; font-size:12px;
+  }
+  /* filtres en grille 2 colonnes, recherche pleine largeur */
+  .filters{
+    width:100%; display:grid; grid-template-columns:1fr 1fr; gap:6px;
+    clip-path:none; padding:10px;
+  }
+  .filters #q{ grid-column:1 / -1; min-height:44px; }
+  .filters select{ min-height:44px; width:100%; }
+  .super-sale-label{ grid-column:1 / -1; justify-content:center; }
+
+  .meta{ flex-wrap:wrap; gap:6px 14px; font-size:11px; clip-path:none; }
+
+  /* tableau : défilement horizontal (aucune perte de données), # masquée */
+  .app-layout{ flex-direction:column; padding:6px 8px 70px; }
+  .app-layout main{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  #tbl{ min-width:660px; clip-path:none; }
+  #tbl th, #tbl td{ padding:9px 7px; }
+  #tbl th:first-child, #tbl td.rank{ display:none; }      /* colonne # */
+  #tbl thead th{ font-size:10px; letter-spacing:.6px; }
+  .plat{ font-size:15px; }
+  /* cibles tactiles boutons MP / alerte */
+  .mp, .alrt{ min-height:38px; min-width:38px; }
+
+  /* drawer latéral : pleine largeur */
+  .sidebar{ width:100% !important; max-width:100% !important; }
+
+  /* fiches détail / preview en plein écran */
+  #detail .dbox, #detail, #preview, #mobcard{
+    left:0 !important; right:0 !important; width:100% !important; max-width:100% !important;
+  }
+  #detail .dbox{ border-radius:0; clip-path:none; max-height:92vh; }
+}
+
+/* ---------- TRÈS PETIT (<= 430px) ---------- */
+@media (max-width: 430px){
+  .filters{ grid-template-columns:1fr; }
+  header h1{ font-size:13px; letter-spacing:1px; }
+  #tbl{ min-width:560px; }
+  /* colonnes secondaires masquées pour alléger : Vendu 48h + Ventes */
+  #tbl th:nth-child(5), #tbl td:nth-child(5),
+  #tbl th:nth-child(7), #tbl td:nth-child(7){ display:none; }
+}
+
 </style>
 </head>
 <body>
