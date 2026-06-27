@@ -1739,6 +1739,9 @@ tbody tr.hot-row:has(.verdict.hot){
   background: linear-gradient(90deg, var(--p-bg1) 0%, var(--p-bg2) 100%) !important;
 }
 
+
+/* Badge inventaire (items possédés AlecaFrame) */
+.owned-badge{display:inline-block;margin-left:7px;padding:1px 7px;font-size:10.5px;font-weight:700;color:var(--gold);background:rgba(255,207,107,.14);border:1px solid rgba(255,207,107,.35);clip-path:var(--cut-sm,polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px)));white-space:nowrap;vertical-align:middle}
 </style>
 </head>
 <body>
@@ -1765,6 +1768,11 @@ tbody tr.hot-row:has(.verdict.hot){
       <select id="market" title="Masquer les items sans vendeur (liens morts)">
         <option value="sellers" selected data-i18n="mkt_sellers">Avec vendeur en ligne</option>
         <option value="all" data-i18n="mkt_all">Tous (même sans ordre)</option>
+      </select>
+      <select id="owned" title="Filtrer selon votre inventaire AlecaFrame (items possédés)">
+        <option value="all" selected>📦 Possédés : tous</option>
+        <option value="only">📦 Possédés seulement</option>
+        <option value="hide">📦 Masquer possédés</option>
       </select>
       <select id="sets" title="Afficher les sets complets (prix du set entier)">
         <option value="hide" selected data-i18n="sets_hide">Sets : masqués</option>
@@ -2067,6 +2075,25 @@ async function discoverPcApi(){
     if(r.ok){ const j = await r.json(); if(j && j.url) PC_PROXY_BASE = j.url; }
   }catch(e){ /* annuaire injoignable : on ignore */ }
   return PC_PROXY_BASE;
+}
+
+// Inventaire possédé (AlecaFrame) découvert via le PC : { slug: quantité }.
+let OWNED = {};
+let ownedLoaded = false;
+async function loadInventory(){
+  const pc = await discoverPcApi();
+  if(!pc) return;
+  try{
+    const root = pc.replace(/\/proxy\/?$/,"");
+    const r = await fetch(`${root}/api/inventory`, { cache: "no-store" });
+    if(!r.ok) return;
+    const j = await r.json();
+    OWNED = {};
+    (j.items||[]).forEach(it=>{ OWNED[it.slug] = it.count; });
+    for(const d of ALL){ d.owned = OWNED[d.slug] || 0; }
+    ownedLoaded = Object.keys(OWNED).length>0;
+    reflow();
+  }catch(e){ /* PC/inventaire indispo : on ignore */ }
 }
 
 const PROXIES=[
@@ -2529,9 +2556,12 @@ function buildView(){
   const vf=$("#vault").value;
   const mf=$("#market").value;
   const sets=$("#sets").value;
+  const own=$("#owned")?$("#owned").value:"all";
   const superSale=$("#superSale").checked;
   VIEW=ALL.filter(d=>{
     if(d.tradable===false) return false;             // retirer les items non échangeables entre joueurs
+    if(own==="only" && !(d.owned>0)) return false;   // inventaire : possédés seulement
+    if(own==="hide" && d.owned>0) return false;      // inventaire : masquer possédés
     if(sets==="hide" && d.isSet) return false;       // sets masqués par défaut
     if(sets==="only" && !d.isSet) return false;      // sets uniquement
     if(q && !d.name.toLowerCase().includes(q)) return false;
@@ -2832,7 +2862,7 @@ function render(){
     const d=VIEW[i];
     html[i]=`<tr class="${rowClass(d)}" data-slug="${d.slug}">
       <td class="rank">${rankByPlat&&d.plat!=null?(i+1):""}</td>
-      <td class="name"><span class="itemlink" data-slug="${d.slug}" title="Voir la fiche complète">${d.thumb?`<img src="${d.thumb}" loading="lazy" alt="">`:""}<span>${d.vaulted===true?'<span class="lock" title="Vaulted">🔒</span>':""}${d.name}</span></span></td>
+      <td class="name"><span class="itemlink" data-slug="${d.slug}" title="Voir la fiche complète">${d.thumb?`<img src="${d.thumb}" loading="lazy" alt="">`:""}<span>${d.vaulted===true?'<span class="lock" title="Vaulted">🔒</span>':""}${d.name}${d.owned>0?`<span class="owned-badge" title="Dans votre inventaire AlecaFrame">📦 x${d.owned}</span>`:""}</span></span></td>
       <td class="num pcell" data-slug="${d.slug}">${priceCell(d)}</td>
       <td class="num lastcell" data-slug="${d.slug}">${lastCell(d)}</td>
       <td class="num soldcell" data-slug="${d.slug}">${soldCell(d)}</td>
@@ -3220,6 +3250,7 @@ $("#q").addEventListener("input",()=>{clearTimeout(qTimer);qTimer=setTimeout(app
 $("#cat").addEventListener("change",applyFilter);
 $("#vault").addEventListener("change",applyFilter);
 $("#market").addEventListener("change",applyFilter);
+$("#owned").addEventListener("change",applyFilter);
 $("#sets").addEventListener("change",applyFilter);
 $("#superSale").addEventListener("change",applyFilter);
 $("#lang").addEventListener("change",()=>{ applyLang($("#lang").value); savePrefs(); });
@@ -4136,6 +4167,7 @@ function selectChatPartner(partner, forceRefresh = false) {
     // prix en masse (dump ~4 Mo) EN ARRIÈRE-PLAN : la liste est déjà affichée, on l'enrichit ensuite
     loadBulkPrices().then(loaded=>{ if(loaded){ reflow(); startScan(); } });
     loadSources().then(()=>{ computeSetFarmable(); reflow(); });   // recalcul après les sources de drop
+    loadInventory();   // items possédés (AlecaFrame via le PC) : quantités + filtre
   }catch(e){
     let msg = `<span class="err">${t("st_fail")} : ${e.message}.</span>`;
     
