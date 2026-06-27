@@ -1424,6 +1424,143 @@
     height: 14px;
     margin: 0;
   }
+
+
+/* ===== INJECTION THEME WARFRAME PRO MAX ===== */
+/* ====================================================================
+   WARFRAME UI — THEME PRO MAX (couche additive, override)
+   Style "Tenno" : verre sombre, biseaux angulaires, cyan + or, starfield.
+   Pas d'animation par-frame couteuse (glow statique / opacity composite).
+   ==================================================================== */
+:root{
+  --bg:#05080f; --bg2:#0a121d;
+  --panel:rgba(13,23,36,.82); --panel2:rgba(19,32,47,.9);
+  --border:#1c3a52; --border2:#2f6f90;
+  --txt:#dce9f4; --muted:#7d94a7; --accent:#46d6ff; --accent2:#178fc0; --gold:#ffcf6b;
+  --green:#4ce0a4; --orange:#ff9f43; --red:#ff5d6c;
+  --glow:0 0 16px rgba(70,214,255,.32);
+  --shadow:0 10px 34px rgba(0,0,0,.55);
+  --cut:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));
+  --cut-sm:polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,7px 100%,0 calc(100% - 7px));
+}
+
+/* ---------- Fond Tenno : dégradés + lignes diagonales + vignette ---------- */
+body{
+  background:
+    radial-gradient(1200px 620px at 82% -12%, rgba(70,214,255,.07), transparent 60%),
+    radial-gradient(900px 520px at -12% 112%, rgba(255,207,107,.05), transparent 60%),
+    repeating-linear-gradient(118deg, rgba(120,190,230,.020) 0 1px, transparent 1px 64px),
+    linear-gradient(180deg,#070e18 0%,#05080f 70%) !important;
+  color:var(--txt);
+}
+/* champ d'étoiles discret (z-index négatif : aucun impact sur le positionnement
+   des enfants — évite de casser les modales position:fixed) */
+body::before{
+  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.5;
+  background-image:
+    radial-gradient(1.2px 1.2px at 15% 22%, rgba(255,255,255,.55), transparent 60%),
+    radial-gradient(1px 1px at 38% 64%, rgba(255,255,255,.35), transparent 60%),
+    radial-gradient(1.4px 1.4px at 67% 33%, rgba(180,230,255,.5), transparent 60%),
+    radial-gradient(1px 1px at 84% 71%, rgba(255,255,255,.3), transparent 60%),
+    radial-gradient(1px 1px at 52% 12%, rgba(255,255,255,.4), transparent 60%),
+    radial-gradient(1.2px 1.2px at 27% 84%, rgba(180,230,255,.4), transparent 60%);
+  background-repeat:no-repeat;
+}
+
+/* ---------- En-tête : barre biseautée + filet cyan + titre Tenno ---------- */
+header{
+  background:linear-gradient(180deg, rgba(16,28,42,.92), rgba(9,16,25,.92)) !important;
+  border:1px solid var(--border) !important;
+  border-top:2px solid var(--accent) !important;
+  clip-path:var(--cut);
+  box-shadow:0 2px 0 rgba(70,214,255,.08), var(--shadow);
+  backdrop-filter:blur(6px);
+}
+header h1{
+  text-transform:uppercase; letter-spacing:3px; font-weight:800;
+  font-size:16px; color:#eaf6ff;
+  text-shadow:0 0 14px rgba(70,214,255,.45);
+}
+header h1 .dot{ box-shadow:0 0 12px var(--accent); background:var(--accent) !important; }
+
+/* ---------- Boutons angulaires ---------- */
+button{
+  background:linear-gradient(180deg, rgba(22,38,54,.9), rgba(13,23,36,.9)) !important;
+  color:var(--txt) !important; border:1px solid var(--border2) !important;
+  clip-path:var(--cut-sm); text-transform:uppercase; letter-spacing:.6px;
+  font-size:12px; font-weight:700; transition:transform .12s, box-shadow .12s, border-color .12s, background .12s;
+}
+button:hover{
+  border-color:var(--accent) !important; color:#eaf6ff !important;
+  box-shadow:0 0 0 1px rgba(70,214,255,.25), 0 0 14px rgba(70,214,255,.22);
+  transform:translateY(-1px);
+}
+button.primary{
+  background:linear-gradient(180deg,#46d6ff,#1791c2) !important; color:#04121d !important;
+  border-color:#8fe9ff !important; font-weight:800;
+  box-shadow:0 0 16px rgba(70,214,255,.4);
+}
+button.primary:hover{ box-shadow:0 0 22px rgba(70,214,255,.6); }
+
+/* ---------- Champs (recherche / selects) ---------- */
+#q, select, input[type="text"]{
+  background:rgba(7,14,22,.85) !important; border:1px solid var(--border2) !important;
+  color:var(--txt) !important; clip-path:var(--cut-sm);
+}
+#q:focus, select:focus{
+  outline:none !important; border-color:var(--accent) !important;
+  box-shadow:0 0 0 1px rgba(70,214,255,.3), inset 0 -2px 0 rgba(70,214,255,.4);
+}
+.filters{
+  background:linear-gradient(180deg, rgba(12,21,33,.86), rgba(8,14,22,.86)) !important;
+  border:1px solid var(--border) !important; border-left:2px solid var(--accent) !important;
+  clip-path:var(--cut); backdrop-filter:blur(5px);
+}
+
+/* ---------- Barre de statut ---------- */
+.meta{
+  background:linear-gradient(180deg, rgba(12,21,33,.7), rgba(8,14,22,.7)) !important;
+  border:1px solid var(--border) !important; clip-path:var(--cut-sm);
+  text-transform:uppercase; letter-spacing:.4px; font-size:11.5px;
+}
+.bar{ background:rgba(7,14,22,.8) !important; }
+.bar > i{ background:linear-gradient(90deg,#46d6ff,#ffcf6b) !important; box-shadow:0 0 12px rgba(70,214,255,.5); }
+
+/* ---------- Tableau : cadre verre + entête Tenno ---------- */
+.app-layout main, #tbl{ position:relative; }
+#tbl{
+  background:linear-gradient(180deg, rgba(10,18,28,.72), rgba(7,12,20,.72)) !important;
+  border:1px solid var(--border) !important; border-top:2px solid var(--accent2) !important;
+  clip-path:var(--cut); box-shadow:var(--shadow); backdrop-filter:blur(4px);
+}
+#tbl thead th{
+  background:linear-gradient(180deg, rgba(18,31,46,.95), rgba(11,20,30,.95)) !important;
+  color:#bfe6f5 !important; text-transform:uppercase; letter-spacing:1.2px;
+  font-size:11px; font-weight:700;
+  border-bottom:2px solid rgba(70,214,255,.45) !important;
+}
+#tbl tbody td{ border-bottom:1px solid rgba(40,66,90,.35) !important; }
+#tbl tbody tr{ transition:background .12s; }
+#tbl tbody tr:hover{
+  background:linear-gradient(90deg, rgba(70,214,255,.10), rgba(70,214,255,.02)) !important;
+  box-shadow:inset 3px 0 0 var(--accent);
+}
+.plat{ color:var(--accent) !important; text-shadow:0 0 10px rgba(70,214,255,.4); }
+.lastsale{ color:var(--gold) !important; }
+
+/* ---------- Tags / catégories ---------- */
+.tag{ clip-path:var(--cut-sm); border:1px solid rgba(120,160,190,.18); }
+.tag.prime{ background:rgba(255,207,107,.14) !important; color:var(--gold) !important; border-color:rgba(255,207,107,.35); }
+.tag.mod{ background:rgba(70,214,255,.14) !important; color:var(--accent) !important; border-color:rgba(70,214,255,.35); }
+.tag.arcane{ background:rgba(76,224,164,.14) !important; color:var(--green) !important; border-color:rgba(76,224,164,.35); }
+
+/* ---------- Panneau latéral / cartes / preview ---------- */
+.dbox, #preview, #mobcard, .sidebar, aside{
+  background:linear-gradient(180deg, rgba(13,23,36,.94), rgba(8,14,22,.94)) !important;
+  border:1px solid var(--border2) !important; border-top:2px solid var(--accent) !important;
+  clip-path:var(--cut); box-shadow:var(--shadow); backdrop-filter:blur(8px);
+}
+
 </style>
 </head>
 <body>
