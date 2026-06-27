@@ -2220,7 +2220,7 @@ const VAULT_TTL=24*60*60*1000;   // 24 h
 let vaultMap={}, tradableMap={};
 async function loadVault(){
   try{
-    const raw=localStorage.getItem("wf_vault2");
+    const raw=localStorage.getItem("wf_vault3");
     if(raw){const c=JSON.parse(raw); if(Date.now()-c.ts<VAULT_TTL){vaultMap=c.map; tradableMap=c.trade||{}; return;}}
   }catch{}
   try{
@@ -2230,7 +2230,7 @@ async function loadVault(){
       if(typeof x.vaulted==="boolean") vaultMap[x.name]=x.vaulted;
       if(typeof x.tradable==="boolean") tradableMap[x.name]=x.tradable;
     }
-    try{localStorage.setItem("wf_vault2",JSON.stringify({map:vaultMap,trade:tradableMap,ts:Date.now()}));}catch{}
+    try{localStorage.setItem("wf_vault3",JSON.stringify({map:vaultMap,trade:tradableMap,ts:Date.now()}));}catch{}
   }catch(e){ /* tant pis : statut inconnu */ }
 }
 // renvoie true (vaulted), false (dispo) ou null (inconnu / non-prime)
