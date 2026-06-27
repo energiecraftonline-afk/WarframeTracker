@@ -1712,6 +1712,33 @@ tbody tr.hot-row:has(.verdict.hot){
 /* Bordure latérale gauche cohérente avec la couleur d'affaire. */
 tbody tr.hot-row td:first-child{ border-left-color: var(--p-border) !important; }
 
+
+/* ===== INJECTION FOND = COULEUR AFFAIRE ===== */
+/* ====================================================================
+   Fond de ligne = couleur de l'AFFAIRE (deal), comme la bordure qui respire.
+   Variables --p-bg1/--p-bg2 pilotées par le verdict via :has().
+   ==================================================================== */
+tbody tr.hot-row{
+  --p-bg1: rgba(255, 207, 107, 0.14);
+  --p-bg2: rgba(255, 207, 107, 0.03);
+}
+tbody tr.hot-row:has(.verdict.save){
+  --p-bg1: rgba(76, 224, 164, 0.15);
+  --p-bg2: rgba(76, 224, 164, 0.03);
+}
+tbody tr.hot-row:has(.verdict.warn){
+  --p-bg1: rgba(255, 93, 108, 0.15);
+  --p-bg2: rgba(255, 93, 108, 0.03);
+}
+tbody tr.hot-row:has(.verdict.hot){
+  --p-bg1: rgba(255, 207, 107, 0.16);
+  --p-bg2: rgba(255, 207, 107, 0.04);
+}
+/* #tbl assure une spécificité (id) supérieure aux dégradés prix existants. */
+#tbl tbody tr.hot-row{
+  background: linear-gradient(90deg, var(--p-bg1) 0%, var(--p-bg2) 100%) !important;
+}
+
 </style>
 </head>
 <body>
