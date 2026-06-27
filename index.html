@@ -3538,9 +3538,21 @@ async function loadDetailDrops(d){
   const body=$("#dbodycontent"); if(!body) return;
   const spin=body.querySelector(".dspin"); if(spin) spin.remove();
   if(list===null){ body.insertAdjacentHTML("beforeend",`<div class="dsec"><div class="dempty">Sources de drop indisponibles (réseau).</div></div>`); return; }
-  const locs=dropRows(list.filter(x=>isLocSrc(x.location)));
-  const mobs=dropRows(list.filter(x=>!isLocSrc(x.location)));
+  // Marchands PNJ / syndicats / boutiques -> "où acheter" (warframestat liste
+  // les offres syndicat sous "Syndicat, Rang" — non couvert par classifySource).
+  const MERCHANT_RE=/baro|simaris|teshin|conclave|nightwave|maroo|iron\s*wake|arbiters of hexis|cephalon\s*suda|perrin sequence|red veil|steel meridian|new loka|ostron|solaris united|vox solaris|quills|entrati|necraloid|cavia|holdfasts|the hex|kahl|offering|standing/i;
+  const isMerchant=x=>MERCHANT_RE.test(x.location||"");
+  const merch=dropRows(list.filter(isMerchant));
+  const rest=list.filter(x=>!isMerchant(x));
+  const locs=dropRows(rest.filter(x=>isLocSrc(x.location)));
+  const mobs=dropRows(rest.filter(x=>!isLocSrc(x.location)));
   let html="";
+  if(merch.length){
+    html+=`<div class="dsec"><h3>🛒 Où acheter — Marchands / Syndicats (${merch.length})</h3><table class="dt">
+      <tr><th>Marchand / Syndicat (rang)</th><th>Rareté</th><th style="text-align:right">Taux</th></tr>`+
+      merch.map(r=>{const ic=/baro/i.test(r.loc)?"🛒":"🧍";return `<tr><td>${ic} ${r.loc}</td><td>${rarDot(r.rarity)}${r.rarity||"—"}</td><td class="pc">${r.pcStr}</td></tr>`;}).join("")
+      +`</table></div>`;
+  }
   if(locs.length){
     html+=`<div class="dsec"><h3>🪐 Missions & lieux (${locs.length})</h3><table class="dt">
       <tr><th>Planète / Mission</th><th class="rot">Rot.</th><th>Rareté</th><th style="text-align:right">Taux</th></tr>`+
